@@ -1,5 +1,6 @@
 streamlit
-tflite-runtime
-numpy
+tensorflow-cpu==2.15.0
+numpy==1.23.5
 pandas
 pillow
+h5py
