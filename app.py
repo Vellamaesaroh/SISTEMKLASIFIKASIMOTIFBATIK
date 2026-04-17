@@ -5,8 +5,7 @@ from datetime import datetime
 from PIL import Image
 import os
 import base64
-import tensorflow as tf
-from tensorflow.keras.applications.efficientnet import preprocess_input
+import tflite_runtime.interpreter as tflite
 
 # ===========================
 # CONFIG
@@ -14,14 +13,15 @@ from tensorflow.keras.applications.efficientnet import preprocess_input
 st.set_page_config(layout="wide", page_title="Batik AI")
 
 # ===========================
-# LOAD MODEL
+# LOAD MODEL (TFLITE)
 # ===========================
 @st.cache_resource
 def load_model():
-    model = tf.keras.models.load_model("best_model_EfficientNetB0.h5")
-    return model
+    interpreter = tflite.Interpreter(model_path="model.tflite")
+    interpreter.allocate_tensors()
+    return interpreter
 
-model = load_model()
+interpreter = load_model()
 
 # ===========================
 # SESSION STATE
@@ -117,16 +117,24 @@ for name in class_names:
     category_images[name] = found
 
 # ===========================
-# PREDICT FUNCTION (REAL)
+# PREDICT FUNCTION (TFLITE)
 # ===========================
 def predict(img):
     img = img.resize((224, 224))
-    img_array = np.array(img)
+    img = np.array(img).astype(np.float32)
 
-    img_array = preprocess_input(img_array)
-    img_array = np.expand_dims(img_array, axis=0)
+    # NORMALISASI (sesuaikan training EfficientNet)
+    img = (img / 127.5) - 1  
 
-    pred = model.predict(img_array)[0]
+    img = np.expand_dims(img, axis=0)
+
+    input_details = interpreter.get_input_details()
+    output_details = interpreter.get_output_details()
+
+    interpreter.set_tensor(input_details[0]['index'], img)
+    interpreter.invoke()
+
+    pred = interpreter.get_tensor(output_details[0]['index'])[0]
     return pred
 
 # ===========================
@@ -189,20 +197,20 @@ elif menu == "Klasifikasi":
             st.write(f"Confidence: {conf*100:.2f}%")
             st.progress(float(conf))
 
-            # Top 3 Prediction
+            # TOP 3
             top3_idx = np.argsort(pred)[-3:][::-1]
             st.write("Top 3 Prediksi:")
             for i in top3_idx:
                 st.write(f"- {class_names[i]} ({pred[i]*100:.2f}%)")
 
-            # Chart
+            # CHART
             df_pred = pd.DataFrame({
                 "Motif": class_names,
                 "Probabilitas": pred
             })
             st.bar_chart(df_pred.set_index("Motif"))
 
-            # Save history
+            # SIMPAN RIWAYAT
             st.session_state.history.append({
                 "Waktu": datetime.now().strftime("%H:%M:%S"),
                 "File": uploaded_file.name,
@@ -212,7 +220,7 @@ elif menu == "Klasifikasi":
             })
 
 # ===========================
-# RIWAYAT (PRO LEVEL)
+# RIWAYAT
 # ===========================
 elif menu == "Riwayat":
     st.markdown("<div class='title'>Riwayat Prediksi</div>", unsafe_allow_html=True)
@@ -234,7 +242,6 @@ elif menu == "Riwayat":
                     st.session_state.history.pop(len(st.session_state.history)-1-i)
                     st.rerun()
 
-        # Download CSV
         df = pd.DataFrame([
             {k:v for k,v in item.items() if k != "Gambar"}
             for item in st.session_state.history
