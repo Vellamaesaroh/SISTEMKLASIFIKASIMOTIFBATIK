@@ -5,11 +5,23 @@ from datetime import datetime
 from PIL import Image
 import os
 import base64
+import tensorflow as tf
+from tensorflow.keras.applications.efficientnet import preprocess_input
 
 # ===========================
 # CONFIG
 # ===========================
-st.set_page_config(layout="wide", page_title="Batik")
+st.set_page_config(layout="wide", page_title="Batik AI")
+
+# ===========================
+# LOAD MODEL
+# ===========================
+@st.cache_resource
+def load_model():
+    model = tf.keras.models.load_model("best_model_EfficientNetB0.h5")
+    return model
+
+model = load_model()
 
 # ===========================
 # SESSION STATE
@@ -22,8 +34,7 @@ if "history" not in st.session_state:
 # ===========================
 def get_base64_image(path):
     with open(path, "rb") as f:
-        data = f.read()
-    return base64.b64encode(data).decode()
+        return base64.b64encode(f.read()).decode()
 
 bg_img = get_base64_image("assets/bg_2.jpg")
 
@@ -32,8 +43,6 @@ bg_img = get_base64_image("assets/bg_2.jpg")
 # ===========================
 st.markdown(f"""
 <style>
-
-/* SIDEBAR BACKGROUND */
 section[data-testid="stSidebar"] {{
     background: url("data:image/jpg;base64,{bg_img}");
     background-size: 250px;
@@ -47,13 +56,8 @@ section[data-testid="stSidebar"]::before {{
     background: rgba(0,0,0,0.4);
 }}
 
-section[data-testid="stSidebar"] .block-container {{
-    position: relative;
-    z-index: 1;
-}}
-
 .title {{
-    font-size: clamp(10px, 4vw, 32px);
+    font-size: 32px;
     font-weight:700;
     text-align:center;
 }}
@@ -78,7 +82,6 @@ section[data-testid="stSidebar"] .block-container {{
     color:white;
     font-weight:600;
 }}
-
 </style>
 """, unsafe_allow_html=True)
 
@@ -114,11 +117,16 @@ for name in class_names:
     category_images[name] = found
 
 # ===========================
-# DUMMY PREDICT (OPS 2)
+# PREDICT FUNCTION (REAL)
 # ===========================
 def predict(img):
-    pred = np.random.rand(len(class_names))
-    pred = pred / np.sum(pred)
+    img = img.resize((224, 224))
+    img_array = np.array(img)
+
+    img_array = preprocess_input(img_array)
+    img_array = np.expand_dims(img_array, axis=0)
+
+    pred = model.predict(img_array)[0]
     return pred
 
 # ===========================
@@ -126,13 +134,7 @@ def predict(img):
 # ===========================
 if menu == "Beranda":
     st.markdown("<div class='title'>Sistem Klasifikasi Motif Batik</div>", unsafe_allow_html=True)
-
-    st.markdown(
-        "<div class='subtitle'>"
-        "Aplikasi AI untuk klasifikasi motif batik secara otomatis"
-        "</div>",
-        unsafe_allow_html=True
-    )
+    st.markdown("<div class='subtitle'>AI untuk klasifikasi motif batik</div>", unsafe_allow_html=True)
 
     path = os.path.join("assets", "batik.jpg")
     if os.path.exists(path):
@@ -185,9 +187,22 @@ elif menu == "Klasifikasi":
 
             st.markdown(f"<div class='badge'>{label.upper()}</div>", unsafe_allow_html=True)
             st.write(f"Confidence: {conf*100:.2f}%")
-
             st.progress(float(conf))
 
+            # Top 3 Prediction
+            top3_idx = np.argsort(pred)[-3:][::-1]
+            st.write("Top 3 Prediksi:")
+            for i in top3_idx:
+                st.write(f"- {class_names[i]} ({pred[i]*100:.2f}%)")
+
+            # Chart
+            df_pred = pd.DataFrame({
+                "Motif": class_names,
+                "Probabilitas": pred
+            })
+            st.bar_chart(df_pred.set_index("Motif"))
+
+            # Save history
             st.session_state.history.append({
                 "Waktu": datetime.now().strftime("%H:%M:%S"),
                 "File": uploaded_file.name,
@@ -196,24 +211,30 @@ elif menu == "Klasifikasi":
                 "Gambar": img.copy()
             })
 
-            st.bar_chart(pred)
-
 # ===========================
-# RIWAYAT
+# RIWAYAT (PRO LEVEL)
 # ===========================
 elif menu == "Riwayat":
-    st.markdown("<div class='title'>Riwayat</div>", unsafe_allow_html=True)
+    st.markdown("<div class='title'>Riwayat Prediksi</div>", unsafe_allow_html=True)
 
     if st.session_state.history:
-        for item in st.session_state.history[::-1]:
-            col1, col2 = st.columns([1,3])
+        for i, item in enumerate(st.session_state.history[::-1]):
+            col1, col2, col3 = st.columns([1,3,1])
 
             with col1:
                 st.image(item["Gambar"], use_column_width=True)
 
             with col2:
-                st.write(item)
+                st.write(f"**{item['Prediksi']}** ({item['Confidence']})")
+                st.write(f"File: {item['File']}")
+                st.write(f"Waktu: {item['Waktu']}")
 
+            with col3:
+                if st.button("Hapus", key=i):
+                    st.session_state.history.pop(len(st.session_state.history)-1-i)
+                    st.rerun()
+
+        # Download CSV
         df = pd.DataFrame([
             {k:v for k,v in item.items() if k != "Gambar"}
             for item in st.session_state.history
@@ -221,8 +242,8 @@ elif menu == "Riwayat":
 
         st.download_button("Download CSV", df.to_csv(index=False), "riwayat.csv")
 
-        if st.button("Hapus Riwayat"):
+        if st.button("Hapus Semua"):
             st.session_state.history = []
-            st.success("Riwayat dihapus")
+            st.success("Semua riwayat dihapus")
     else:
         st.info("Belum ada data")
