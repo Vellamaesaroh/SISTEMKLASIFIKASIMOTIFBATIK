@@ -1,5 +1,6 @@
-streamlit
+streamlit==1.33.0
 tensorflow-cpu==2.15.0
-numpy
-pandas
-pillow
+numpy==1.23.5
+pandas==1.5.3
+pillow==9.5.0
+h5py==3.8.0
