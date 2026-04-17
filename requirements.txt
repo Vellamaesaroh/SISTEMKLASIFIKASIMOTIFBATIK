@@ -1,4 +1,7 @@
 streamlit
+tensorflow==2.10.0
 numpy
 pandas
 Pillow
+h5py
+protobuf==3.20.3
