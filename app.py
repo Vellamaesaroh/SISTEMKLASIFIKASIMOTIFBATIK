@@ -1,10 +1,8 @@
 import streamlit as st
-import tensorflow as tf
 import numpy as np
 import pandas as pd
 from datetime import datetime
 from PIL import Image
-from tensorflow.keras.applications.efficientnet import preprocess_input
 import os
 import base64
 
@@ -30,7 +28,7 @@ def get_base64_image(path):
 bg_img = get_base64_image("assets/bg_2.jpg")
 
 # ===========================
-# STYLE (FINAL FIX RESPONSIVE + BG IMAGE)
+# STYLE
 # ===========================
 st.markdown(f"""
 <style>
@@ -42,7 +40,6 @@ section[data-testid="stSidebar"] {{
     background-position: center;
 }}
 
-/* OVERLAY */
 section[data-testid="stSidebar"]::before {{
     content: "";
     position: absolute;
@@ -55,59 +52,25 @@ section[data-testid="stSidebar"] .block-container {{
     z-index: 1;
 }}
 
-/* JUDUL MENU */
-section[data-testid="stSidebar"] h4 {{
-    color: white;
-    font-weight: 700;
-    margin-bottom: 15px;
-}}
-
-/* SELECTBOX */
-section[data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] {{
-    background: white;
-    border-radius: 10px;
-    padding: 5px;
-}}
-
-/* TEXT DALAM DROPDOWN */
-section[data-testid="stSidebar"] .stSelectbox div {{
-    color: #0f172a;
-    font-weight: 500;
-}}
-
-/* HOVER */
-section[data-testid="stSidebar"] .stSelectbox div:hover {{
-    background: #e0f2fe;
-}}
-
-/* TITLE */
 .title {{
     font-size: clamp(10px, 4vw, 32px);
     font-weight:700;
     text-align:center;
-    margin-bottom:10px;
-    word-wrap: break-word;
-    line-height:1.3;
 }}
 
-/* SUBTITLE */
 .subtitle {{
     text-align:center;
     opacity:0.7;
     margin-bottom:20px;
-    padding: 0 10px;
 }}
 
-/* CARD */
 .card {{
     background: rgba(255,255,255,0.85);
     border-radius:16px;
     padding:15px;
     text-align:center;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
 }}
 
-/* BADGE */
 .badge {{
     background: #16a34a;
     padding:6px 16px;
@@ -124,21 +87,7 @@ section[data-testid="stSidebar"] .stSelectbox div:hover {{
 # ===========================
 with st.sidebar:
     st.markdown("<h4>MENU</h4>", unsafe_allow_html=True)
-
-    menu = st.selectbox(
-        "",
-        ["Beranda", "Motif", "Klasifikasi", "Riwayat"]
-    )
-
-# ===========================
-# LOAD MODEL
-# ===========================
-@st.cache_resource
-def load_model():
-    model = tf.keras.models.load_model("model_batik_effnet")
-    return model.signatures["serving_default"]
-
-model = load_model()
+    menu = st.selectbox("", ["Beranda", "Motif", "Klasifikasi", "Riwayat"])
 
 # ===========================
 # CLASS
@@ -165,17 +114,11 @@ for name in class_names:
     category_images[name] = found
 
 # ===========================
-# PREDICT
+# DUMMY PREDICT (OPS 2)
 # ===========================
 def predict(img):
-    img = img.resize((224,224))
-    img_array = np.array(img, dtype=np.float32)
-    img_array = preprocess_input(img_array)
-    img_array = np.expand_dims(img_array, axis=0)
-
-    pred_tensor = model(tf.convert_to_tensor(img_array))
-    pred = list(pred_tensor.values())[0].numpy()[0]
-
+    pred = np.random.rand(len(class_names))
+    pred = pred / np.sum(pred)
     return pred
 
 # ===========================
@@ -186,18 +129,14 @@ if menu == "Beranda":
 
     st.markdown(
         "<div class='subtitle'>"
-        "Selamat datang di Sistem Klasifikasi Motif Batik, sebuah aplikasi berbasis kecerdasan buatan <br>"
-        "yang dirancang untuk mengenali dan mengklasifikasikan motif batik secara otomatis."
+        "Aplikasi AI untuk klasifikasi motif batik secara otomatis"
         "</div>",
         unsafe_allow_html=True
     )
 
-    batik_image_path = os.path.join("assets", "batik.jpg")
-
-    if os.path.exists(batik_image_path):
-        st.image(batik_image_path, use_column_width=True)
-    else:
-        st.warning("Gambar batik tidak ditemukan")
+    path = os.path.join("assets", "batik.jpg")
+    if os.path.exists(path):
+        st.image(path, use_column_width=True)
 
 # ===========================
 # MOTIF
@@ -213,7 +152,7 @@ elif menu == "Motif":
 
             img_path = category_images.get(name)
 
-            if img_path and os.path.exists(img_path):
+            if img_path:
                 st.image(Image.open(img_path), use_column_width=True)
             else:
                 st.warning("Gambar tidak tersedia")
@@ -227,7 +166,7 @@ elif menu == "Motif":
 elif menu == "Klasifikasi":
     st.markdown("<div class='title'>Klasifikasi Motif Batik</div>", unsafe_allow_html=True)
 
-    uploaded_file = st.file_uploader("Upload Gambar Batik", type=["jpg","png","jpeg"])
+    uploaded_file = st.file_uploader("Upload Gambar", type=["jpg","png","jpeg"])
 
     if uploaded_file:
         col1, col2 = st.columns([1,2])
@@ -263,10 +202,9 @@ elif menu == "Klasifikasi":
 # RIWAYAT
 # ===========================
 elif menu == "Riwayat":
-    st.markdown("<div class='title'>Riwayat Klasifikasi</div>", unsafe_allow_html=True)
+    st.markdown("<div class='title'>Riwayat</div>", unsafe_allow_html=True)
 
     if st.session_state.history:
-
         for item in st.session_state.history[::-1]:
             col1, col2 = st.columns([1,3])
 
@@ -274,25 +212,17 @@ elif menu == "Riwayat":
                 st.image(item["Gambar"], use_column_width=True)
 
             with col2:
-                st.markdown(f"**Waktu:** {item['Waktu']}")
-                st.markdown(f"**File:** {item['File']}")
-                st.markdown(f"**Prediksi:** {item['Prediksi']}")
-                st.markdown(f"**Confidence:** {item['Confidence']}")
-                st.markdown("---")
+                st.write(item)
 
         df = pd.DataFrame([
             {k:v for k,v in item.items() if k != "Gambar"}
             for item in st.session_state.history
         ])
 
-        st.download_button(
-            "Download CSV",
-            df.to_csv(index=False),
-            "riwayat.csv"
-        )
+        st.download_button("Download CSV", df.to_csv(index=False), "riwayat.csv")
 
         if st.button("Hapus Riwayat"):
             st.session_state.history = []
-            st.success("Riwayat berhasil dihapus")
+            st.success("Riwayat dihapus")
     else:
-        st.info("Belum ada data riwayat")
+        st.info("Belum ada data")
