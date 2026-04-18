@@ -64,20 +64,13 @@ with st.sidebar:
 @st.cache_resource
 def load_model():
     try:
-        # rebuild arsitektur dulu
-        base_model = tf.keras.applications.EfficientNetB0(
-            weights=None,
-            include_top=True,
-            classes=14
+        model = tf.keras.models.load_model(
+            "model_full.h5",
+            compile=False
         )
-
-        # load weights
-        base_model.load_weights("model_efficientnet.h5")
-
-        return base_model
-
+        return model
     except Exception as e:
-        print(e)
+        st.error(f"Gagal load model: {e}")
         return None
 
 model = load_model()
@@ -157,6 +150,8 @@ elif menu == "Klasifikasi":
     if model is None:
         st.error("Model tidak tersedia")
     else:
+        st.success("Model siap digunakan")
+
         uploaded_file = st.file_uploader("Upload Gambar", type=["jpg","png","jpeg"])
 
         if uploaded_file:
