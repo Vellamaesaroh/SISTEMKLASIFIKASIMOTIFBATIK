@@ -79,7 +79,7 @@ def load_model():
             return Rescaling(*args, **kwargs)
 
         model = tf.keras.models.load_model(
-            "model_full.h5",
+            "model_efficientnet.h5",
             compile=False,
             custom_objects={
                 "InputLayer": custom_input_layer,
