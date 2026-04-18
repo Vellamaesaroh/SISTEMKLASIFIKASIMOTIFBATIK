@@ -64,32 +64,8 @@ with st.sidebar:
 @st.cache_resource
 def load_model():
     try:
-        import tensorflow as tf
-        from keras.layers import InputLayer, Rescaling
-
-        # PATCH InputLayer
-        def custom_input_layer(*args, **kwargs):
-            kwargs.pop("batch_shape", None)
-            kwargs.pop("optional", None)
-            return InputLayer(*args, **kwargs)
-
-        # PATCH Rescaling
-        def custom_rescaling(*args, **kwargs):
-            kwargs.pop("dtype", None)
-            return Rescaling(*args, **kwargs)
-
-        model = tf.keras.models.load_model(
-            "model_efficientnet.h5",
-            compile=False,
-            custom_objects={
-                "InputLayer": custom_input_layer,
-                "Rescaling": custom_rescaling,
-                "DTypePolicy": lambda *args, **kwargs: None
-            }
-        )
-
+        model = tf.keras.models.load_model("model_efficientnet.keras")
         return model
-
     except Exception as e:
         st.error(f"Gagal load model: {e}")
         return None
