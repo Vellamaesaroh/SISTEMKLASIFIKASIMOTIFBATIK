@@ -10,7 +10,7 @@ import os
 # ===========================
 # CONFIG
 # ===========================
-st.set_page_config(layout="wide", page_title="Batik")
+st.set_page_config(layout="wide", page_title="Batik AI")
 
 # ===========================
 # SESSION STATE
@@ -27,7 +27,7 @@ section[data-testid="stSidebar"] {
     background: linear-gradient(150deg, #81d4fa, #0284c7) !important;
 }
 .title {
-    font-size: clamp(10px, 4vw, 32px);
+    font-size: 32px;
     font-weight:700;
     text-align:center;
 }
@@ -59,7 +59,7 @@ with st.sidebar:
     menu = st.selectbox("", ["Beranda", "Motif", "Klasifikasi", "Riwayat"])
 
 # ===========================
-# LOAD MODEL (FINAL FIX)
+# LOAD MODEL
 # ===========================
 import keras
 
@@ -193,14 +193,35 @@ elif menu == "Klasifikasi":
                     pred = predict(img)
 
                 idx = np.argmax(pred)
-                label = class_names[idx]
                 conf = float(pred[idx])
 
-                st.markdown(f"<div class='badge'>{label.upper()}</div>", unsafe_allow_html=True)
-                st.write(f"Confidence: {conf*100:.2f}%")
+                # ======================
+                # THRESHOLD
+                # ======================
+                threshold = 0.6
 
+                if conf < threshold:
+                    label = "Tidak Dikenali"
+                    st.error("Motif tidak dikenali")
+                else:
+                    label = class_names[idx]
+                    st.markdown(f"<div class='badge'>{label.upper()}</div>", unsafe_allow_html=True)
+
+                st.write(f"Confidence: {conf*100:.2f}%")
                 st.progress(conf)
 
+                # ======================
+                # TOP 3
+                # ======================
+                st.subheader("Top 3 Prediksi")
+                top3 = pred.argsort()[-3:][::-1]
+
+                for i in top3:
+                    st.write(f"{class_names[i]}: {pred[i]*100:.2f}%")
+
+                # ======================
+                # SIMPAN RIWAYAT
+                # ======================
                 st.session_state.history.append({
                     "Waktu": datetime.now().strftime("%H:%M:%S"),
                     "File": uploaded_file.name,
