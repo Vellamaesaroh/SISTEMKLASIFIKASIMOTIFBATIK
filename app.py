@@ -65,18 +65,27 @@ with st.sidebar:
 def load_model():
     try:
         import tensorflow as tf
-        from keras.layers import InputLayer
+        from keras.layers import InputLayer, Rescaling
 
-        # PATCH biar kompatibel
+        # PATCH InputLayer
         def custom_input_layer(*args, **kwargs):
             kwargs.pop("batch_shape", None)
             kwargs.pop("optional", None)
             return InputLayer(*args, **kwargs)
 
+        # PATCH Rescaling
+        def custom_rescaling(*args, **kwargs):
+            kwargs.pop("dtype", None)
+            return Rescaling(*args, **kwargs)
+
         model = tf.keras.models.load_model(
-            "model_efficientnet.h5",
+            "model_full.h5",
             compile=False,
-            custom_objects={"InputLayer": custom_input_layer}
+            custom_objects={
+                "InputLayer": custom_input_layer,
+                "Rescaling": custom_rescaling,
+                "DTypePolicy": lambda *args, **kwargs: None
+            }
         )
 
         return model
