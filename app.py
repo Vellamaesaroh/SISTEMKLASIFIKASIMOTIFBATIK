@@ -64,15 +64,20 @@ with st.sidebar:
 @st.cache_resource
 def load_model():
     try:
-        model = tf.keras.models.load_model(
-            "model_efficientnet.h5",
-            compile=False,
-            safe_mode=False   # 🔥 FIX UTAMA
+        # rebuild arsitektur dulu
+        base_model = tf.keras.applications.EfficientNetB0(
+            weights=None,
+            include_top=True,
+            classes=14
         )
-        return model
+
+        # load weights
+        base_model.load_weights("model_efficientnet.h5")
+
+        return base_model
+
     except Exception as e:
-        st.error("❌ Gagal load model")
-        st.code(str(e))
+        print(e)
         return None
 
 model = load_model()
