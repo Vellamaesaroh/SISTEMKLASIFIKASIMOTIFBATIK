@@ -5,6 +5,7 @@ import pandas as pd
 from datetime import datetime
 from PIL import Image
 from tensorflow.keras.applications.efficientnet import preprocess_input
+from tensorflow.keras.applications import EfficientNetB0
 import os
 
 # ===========================
@@ -19,69 +20,28 @@ if "history" not in st.session_state:
     st.session_state.history = []
 
 # ===========================
-# STYLE (FINAL FIX RESPONSIVE)
+# STYLE
 # ===========================
 st.markdown("""
 <style>
-
-/* SIDEBAR BACKGROUND */
 section[data-testid="stSidebar"] {
     background: linear-gradient(150deg, #81d4fa, #0284c7) !important;
 }
-
-/* JUDUL MENU */
-section[data-testid="stSidebar"] h4 {
-    color: white;
-    font-weight: 700;
-    margin-bottom: 15px;
-}
-
-/* SELECTBOX */
-section[data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] {
-    background: white;
-    border-radius: 10px;
-    padding: 5px;
-}
-
-/* TEXT DALAM DROPDOWN */
-section[data-testid="stSidebar"] .stSelectbox div {
-    color: #0f172a;
-    font-weight: 500;
-}
-
-/* HOVER DROPDOWN */
-section[data-testid="stSidebar"] .stSelectbox div:hover {
-    background: #e0f2fe;
-}
-
-/* TITLE */
 .title {
     font-size: clamp(10px, 4vw, 32px);
     font-weight:700;
     text-align:center;
-    margin-bottom:10px;
-    word-wrap: break-word;
-    line-height:1.3;
 }
-
-/* SUBTITLE */
 .subtitle {
     text-align:center;
     opacity:0.7;
-    margin-bottom:20px;
-    padding: 0 10px;
 }
-
-/* CARD */
 .card {
     background: rgba(255,255,255,0.85);
     border-radius:16px;
     padding:15px;
     text-align:center;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
 }
-
-/* BADGE */
 .badge {
     background: #16a34a;
     padding:6px 16px;
@@ -89,7 +49,6 @@ section[data-testid="stSidebar"] .stSelectbox div:hover {
     color:white;
     font-weight:600;
 }
-
 </style>
 """, unsafe_allow_html=True)
 
@@ -98,18 +57,18 @@ section[data-testid="stSidebar"] .stSelectbox div:hover {
 # ===========================
 with st.sidebar:
     st.markdown("<h4>MENU</h4>", unsafe_allow_html=True)
-
-    menu = st.selectbox(
-        "",
-        ["Beranda", "Motif", "Klasifikasi", "Riwayat"]
-    )
+    menu = st.selectbox("", ["Beranda", "Motif", "Klasifikasi", "Riwayat"])
 
 # ===========================
-# LOAD MODEL (SUDAH DIPERBAIKI)
+# LOAD MODEL (FIX FINAL)
 # ===========================
 @st.cache_resource
 def load_model():
-    model = tf.keras.models.load_model("model_efficientnet.h5") 
+    model = tf.keras.models.load_model(
+        "model_efficientnet.h5",
+        compile=False,
+        custom_objects={"EfficientNetB0": EfficientNetB0}
+    )
     return model
 
 model = load_model()
@@ -139,7 +98,7 @@ for name in class_names:
     category_images[name] = found
 
 # ===========================
-# PREDICT (SUDAH DIPERBAIKI)
+# PREDICT
 # ===========================
 def predict(img):
     img = img.resize((224,224))
@@ -148,7 +107,6 @@ def predict(img):
     img_array = np.expand_dims(img_array, axis=0)
 
     pred = model.predict(img_array)[0]
-
     return pred
 
 # ===========================
@@ -158,19 +116,12 @@ if menu == "Beranda":
     st.markdown("<div class='title'>Sistem Klasifikasi Motif Batik</div>", unsafe_allow_html=True)
 
     st.markdown(
-        "<div class='subtitle'>"
-        "Selamat datang di Sistem Klasifikasi Motif Batik, sebuah aplikasi berbasis kecerdasan buatan <br>"
-        "yang dirancang untuk mengenali dan mengklasifikasikan motif batik Indonesia secara otomatis."
-        "</div>",
+        "<div class='subtitle'>Aplikasi AI untuk klasifikasi motif batik</div>",
         unsafe_allow_html=True
     )
 
-    batik_image_path = os.path.join("assets", "batik.jpg")
-
-    if os.path.exists(batik_image_path):
-        st.image(batik_image_path, use_column_width=True)
-    else:
-        st.warning("Gambar batik tidak ditemukan")
+    if os.path.exists("assets/batik.jpg"):
+        st.image("assets/batik.jpg", use_column_width=True)
 
 # ===========================
 # MOTIF
@@ -179,13 +130,11 @@ elif menu == "Motif":
     st.markdown("<div class='title'>Galeri Motif Batik</div>", unsafe_allow_html=True)
 
     cols = st.columns(4)
-
     for i, name in enumerate(class_names):
         with cols[i % 4]:
             st.markdown("<div class='card'>", unsafe_allow_html=True)
 
             img_path = category_images.get(name)
-
             if img_path and os.path.exists(img_path):
                 st.image(Image.open(img_path), use_column_width=True)
             else:
@@ -200,7 +149,7 @@ elif menu == "Motif":
 elif menu == "Klasifikasi":
     st.markdown("<div class='title'>Klasifikasi Motif Batik</div>", unsafe_allow_html=True)
 
-    uploaded_file = st.file_uploader("Upload Gambar Batik", type=["jpg","png","jpeg"])
+    uploaded_file = st.file_uploader("Upload Gambar", type=["jpg","png","jpeg"])
 
     if uploaded_file:
         col1, col2 = st.columns([1,2])
@@ -215,12 +164,12 @@ elif menu == "Klasifikasi":
 
             idx = np.argmax(pred)
             label = class_names[idx]
-            conf = pred[idx]
+            conf = float(pred[idx])
 
             st.markdown(f"<div class='badge'>{label.upper()}</div>", unsafe_allow_html=True)
             st.write(f"Confidence: {conf*100:.2f}%")
 
-            st.progress(float(conf))
+            st.progress(conf)
 
             st.session_state.history.append({
                 "Waktu": datetime.now().strftime("%H:%M:%S"),
@@ -239,7 +188,6 @@ elif menu == "Riwayat":
     st.markdown("<div class='title'>Riwayat Klasifikasi</div>", unsafe_allow_html=True)
 
     if st.session_state.history:
-
         for item in st.session_state.history[::-1]:
             col1, col2 = st.columns([1,3])
 
@@ -258,14 +206,10 @@ elif menu == "Riwayat":
             for item in st.session_state.history
         ])
 
-        st.download_button(
-            "Download CSV",
-            df.to_csv(index=False),
-            "riwayat.csv"
-        )
+        st.download_button("Download CSV", df.to_csv(index=False), "riwayat.csv")
 
         if st.button("Hapus Riwayat"):
             st.session_state.history = []
-            st.success("Riwayat berhasil dihapus")
+            st.success("Riwayat dihapus")
     else:
-        st.info("Belum ada data riwayat")
+        st.info("Belum ada data")
