@@ -5,6 +5,7 @@ import pandas as pd
 from datetime import datetime
 from PIL import Image
 from tensorflow.keras.applications.efficientnet import preprocess_input
+from tensorflow.keras.layers import InputLayer
 import os
 
 # ===========================
@@ -59,15 +60,24 @@ with st.sidebar:
     menu = st.selectbox("", ["Beranda", "Motif", "Klasifikasi", "Riwayat"])
 
 # ===========================
-# LOAD MODEL (FIX FINAL - H5)
+# LOAD MODEL (FIX TYPEERROR)
 # ===========================
 @st.cache_resource
 def load_model():
-    model = tf.keras.models.load_model(
-        "model_efficientnet.h5",
-        compile=False
-    )
-    return model
+    try:
+        model = tf.keras.models.load_model(
+            "model_efficientnet.h5",
+            compile=False,
+            custom_objects={
+                "Functional": tf.keras.models.Model,
+                "InputLayer": InputLayer
+            }
+        )
+        return model
+    except Exception as e:
+        st.error("❌ Gagal load model")
+        st.write(e)
+        return None
 
 model = load_model()
 
@@ -96,7 +106,7 @@ for name in class_names:
     category_images[name] = found
 
 # ===========================
-# PREDICT (FIX)
+# PREDICT
 # ===========================
 def predict(img):
     img = img.resize((224,224))
@@ -112,11 +122,7 @@ def predict(img):
 # ===========================
 if menu == "Beranda":
     st.markdown("<div class='title'>Sistem Klasifikasi Motif Batik</div>", unsafe_allow_html=True)
-
-    st.markdown(
-        "<div class='subtitle'>Aplikasi AI untuk klasifikasi motif batik</div>",
-        unsafe_allow_html=True
-    )
+    st.markdown("<div class='subtitle'>Aplikasi AI untuk klasifikasi motif batik</div>", unsafe_allow_html=True)
 
     if os.path.exists("assets/batik.jpg"):
         st.image("assets/batik.jpg", use_column_width=True)
@@ -147,37 +153,40 @@ elif menu == "Motif":
 elif menu == "Klasifikasi":
     st.markdown("<div class='title'>Klasifikasi Motif Batik</div>", unsafe_allow_html=True)
 
-    uploaded_file = st.file_uploader("Upload Gambar", type=["jpg","png","jpeg"])
+    if model is None:
+        st.error("Model tidak tersedia")
+    else:
+        uploaded_file = st.file_uploader("Upload Gambar", type=["jpg","png","jpeg"])
 
-    if uploaded_file:
-        col1, col2 = st.columns([1,2])
+        if uploaded_file:
+            col1, col2 = st.columns([1,2])
 
-        with col1:
-            img = Image.open(uploaded_file).convert("RGB")
-            st.image(img, use_column_width=True)
+            with col1:
+                img = Image.open(uploaded_file).convert("RGB")
+                st.image(img, use_column_width=True)
 
-        with col2:
-            with st.spinner("Memproses..."):
-                pred = predict(img)
+            with col2:
+                with st.spinner("Memproses..."):
+                    pred = predict(img)
 
-            idx = np.argmax(pred)
-            label = class_names[idx]
-            conf = float(pred[idx])
+                idx = np.argmax(pred)
+                label = class_names[idx]
+                conf = float(pred[idx])
 
-            st.markdown(f"<div class='badge'>{label.upper()}</div>", unsafe_allow_html=True)
-            st.write(f"Confidence: {conf*100:.2f}%")
+                st.markdown(f"<div class='badge'>{label.upper()}</div>", unsafe_allow_html=True)
+                st.write(f"Confidence: {conf*100:.2f}%")
 
-            st.progress(conf)
+                st.progress(conf)
 
-            st.session_state.history.append({
-                "Waktu": datetime.now().strftime("%H:%M:%S"),
-                "File": uploaded_file.name,
-                "Prediksi": label,
-                "Confidence": f"{conf*100:.2f}%",
-                "Gambar": img.copy()
-            })
+                st.session_state.history.append({
+                    "Waktu": datetime.now().strftime("%H:%M:%S"),
+                    "File": uploaded_file.name,
+                    "Prediksi": label,
+                    "Confidence": f"{conf*100:.2f}%",
+                    "Gambar": img.copy()
+                })
 
-            st.bar_chart(pred)
+                st.bar_chart(pred)
 
 # ===========================
 # RIWAYAT
