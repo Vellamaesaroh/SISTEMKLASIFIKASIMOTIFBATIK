@@ -61,12 +61,15 @@ with st.sidebar:
 # ===========================
 # LOAD MODEL (FINAL FIX)
 # ===========================
+import keras
+
 @st.cache_resource
 def load_model():
     try:
-        model = tf.keras.models.load_model(
-            "model_efficientnet.h5",
-            compile=False
+        model = keras.models.load_model(
+            "model_efficientnet.keras",
+            compile=False,
+            safe_mode=False  # 🔥 WAJIB
         )
         return model
     except Exception as e:
