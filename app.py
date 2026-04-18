@@ -5,7 +5,6 @@ import pandas as pd
 from datetime import datetime
 from PIL import Image
 from tensorflow.keras.applications.efficientnet import preprocess_input
-from tensorflow.keras.layers import InputLayer
 import os
 
 # ===========================
@@ -60,7 +59,7 @@ with st.sidebar:
     menu = st.selectbox("", ["Beranda", "Motif", "Klasifikasi", "Riwayat"])
 
 # ===========================
-# LOAD MODEL (FIX TYPEERROR)
+# LOAD MODEL (FINAL FIX)
 # ===========================
 @st.cache_resource
 def load_model():
@@ -68,15 +67,12 @@ def load_model():
         model = tf.keras.models.load_model(
             "model_efficientnet.h5",
             compile=False,
-            custom_objects={
-                "Functional": tf.keras.models.Model,
-                "InputLayer": InputLayer
-            }
+            safe_mode=False   # 🔥 FIX UTAMA
         )
         return model
     except Exception as e:
         st.error("❌ Gagal load model")
-        st.write(e)
+        st.code(str(e))
         return None
 
 model = load_model()
