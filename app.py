@@ -59,11 +59,14 @@ with st.sidebar:
     menu = st.selectbox("", ["Beranda", "Motif", "Klasifikasi", "Riwayat"])
 
 # ===========================
-# LOAD MODEL (FIX FINAL - SAVEDMODEL)
+# LOAD MODEL (FIX FINAL - H5)
 # ===========================
 @st.cache_resource
 def load_model():
-    model = tf.saved_model.load("model_batik_effnet")
+    model = tf.keras.models.load_model(
+        "model_efficientnet.h5",
+        compile=False
+    )
     return model
 
 model = load_model()
@@ -93,7 +96,7 @@ for name in class_names:
     category_images[name] = found
 
 # ===========================
-# PREDICT (FIX UNTUK SAVEDMODEL)
+# PREDICT (FIX)
 # ===========================
 def predict(img):
     img = img.resize((224,224))
@@ -101,10 +104,7 @@ def predict(img):
     img_array = preprocess_input(img_array)
     img_array = np.expand_dims(img_array, axis=0)
 
-    infer = model.signatures["serving_default"]
-    pred = infer(tf.constant(img_array))
-
-    pred = list(pred.values())[0].numpy()[0]
+    pred = model.predict(img_array)[0]
     return pred
 
 # ===========================
