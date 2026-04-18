@@ -5,7 +5,6 @@ import pandas as pd
 from datetime import datetime
 from PIL import Image
 from tensorflow.keras.applications.efficientnet import preprocess_input
-from tensorflow.keras.applications import EfficientNetB0
 import os
 
 # ===========================
@@ -60,15 +59,11 @@ with st.sidebar:
     menu = st.selectbox("", ["Beranda", "Motif", "Klasifikasi", "Riwayat"])
 
 # ===========================
-# LOAD MODEL (FIX FINAL)
+# LOAD MODEL (FIX FINAL - SAVEDMODEL)
 # ===========================
 @st.cache_resource
 def load_model():
-    model = tf.keras.models.load_model(
-        "model_efficientnet.h5",
-        compile=False,
-        custom_objects={"EfficientNetB0": EfficientNetB0}
-    )
+    model = tf.saved_model.load("model_batik_effnet")
     return model
 
 model = load_model()
@@ -98,7 +93,7 @@ for name in class_names:
     category_images[name] = found
 
 # ===========================
-# PREDICT
+# PREDICT (FIX UNTUK SAVEDMODEL)
 # ===========================
 def predict(img):
     img = img.resize((224,224))
@@ -106,7 +101,10 @@ def predict(img):
     img_array = preprocess_input(img_array)
     img_array = np.expand_dims(img_array, axis=0)
 
-    pred = model.predict(img_array)[0]
+    infer = model.signatures["serving_default"]
+    pred = infer(tf.constant(img_array))
+
+    pred = list(pred.values())[0].numpy()[0]
     return pred
 
 # ===========================
