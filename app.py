@@ -64,11 +64,23 @@ with st.sidebar:
 @st.cache_resource
 def load_model():
     try:
+        import tensorflow as tf
+        from keras.layers import InputLayer
+
+        # PATCH biar kompatibel
+        def custom_input_layer(*args, **kwargs):
+            kwargs.pop("batch_shape", None)
+            kwargs.pop("optional", None)
+            return InputLayer(*args, **kwargs)
+
         model = tf.keras.models.load_model(
             "model_efficientnet.h5",
-            compile=False
+            compile=False,
+            custom_objects={"InputLayer": custom_input_layer}
         )
+
         return model
+
     except Exception as e:
         st.error(f"Gagal load model: {e}")
         return None
