@@ -94,7 +94,7 @@ section[data-testid="stSidebar"] .stSelectbox div:hover {
 """, unsafe_allow_html=True)
 
 # ===========================
-# MENU (DROPDOWN LIKE GAMBAR)
+# MENU
 # ===========================
 with st.sidebar:
     st.markdown("<h4>MENU</h4>", unsafe_allow_html=True)
@@ -105,12 +105,12 @@ with st.sidebar:
     )
 
 # ===========================
-# LOAD MODEL
+# LOAD MODEL (SUDAH DIPERBAIKI)
 # ===========================
 @st.cache_resource
 def load_model():
-    model = tf.keras.models.load_model("model_batik_effnet")
-    return model.signatures["serving_default"]
+    model = tf.keras.models.load_model("model_efficientnet.h5") 
+    return model
 
 model = load_model()
 
@@ -139,7 +139,7 @@ for name in class_names:
     category_images[name] = found
 
 # ===========================
-# PREDICT
+# PREDICT (SUDAH DIPERBAIKI)
 # ===========================
 def predict(img):
     img = img.resize((224,224))
@@ -147,8 +147,7 @@ def predict(img):
     img_array = preprocess_input(img_array)
     img_array = np.expand_dims(img_array, axis=0)
 
-    pred_tensor = model(tf.convert_to_tensor(img_array))
-    pred = list(pred_tensor.values())[0].numpy()[0]
+    pred = model.predict(img_array)[0]
 
     return pred
 
@@ -223,7 +222,6 @@ elif menu == "Klasifikasi":
 
             st.progress(float(conf))
 
-            # ✅ TAMBAHAN SIMPAN GAMBAR
             st.session_state.history.append({
                 "Waktu": datetime.now().strftime("%H:%M:%S"),
                 "File": uploaded_file.name,
@@ -242,7 +240,6 @@ elif menu == "Riwayat":
 
     if st.session_state.history:
 
-        # ✅ TAMPILKAN DENGAN GAMBAR
         for item in st.session_state.history[::-1]:
             col1, col2 = st.columns([1,3])
 
@@ -256,7 +253,6 @@ elif menu == "Riwayat":
                 st.markdown(f"**Confidence:** {item['Confidence']}")
                 st.markdown("---")
 
-        # ✅ DOWNLOAD TANPA GAMBAR
         df = pd.DataFrame([
             {k:v for k,v in item.items() if k != "Gambar"}
             for item in st.session_state.history
