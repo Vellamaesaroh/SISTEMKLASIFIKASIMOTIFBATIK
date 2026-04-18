@@ -65,7 +65,7 @@ with st.sidebar:
 def load_model():
     try:
         model = tf.keras.models.load_model(
-            "model_batik.h5",
+            "model_efficientnet.h5",
             compile=False
         )
         return model
