@@ -63,15 +63,39 @@ with st.sidebar:
 # ===========================
 import keras
 
+import tensorflow as tf
+from tensorflow.keras.applications import EfficientNetB0
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import GlobalAveragePooling2D, Dense, Dropout
+
 @st.cache_resource
 def load_model():
     try:
-        model = keras.models.load_model(
-            "model_efficientnet.keras",
-            compile=False,
-            safe_mode=False  # 🔥 WAJIB
+        # ==========================
+        # REBUILD MODEL
+        # ==========================
+        base_model = EfficientNetB0(
+            include_top=False,
+            weights='imagenet',
+            input_shape=(224,224,3)
         )
+        base_model.trainable = False
+
+        model = Sequential([
+            base_model,
+            GlobalAveragePooling2D(),
+            Dense(256, activation='relu'),
+            Dropout(0.5),
+            Dense(14, activation='softmax')
+        ])
+
+        # ==========================
+        # LOAD WEIGHTS (COBA)
+        # ==========================
+        model.load_weights("model_efficientnet.keras")
+
         return model
+
     except Exception as e:
         st.error(f"Gagal load model: {e}")
         return None
