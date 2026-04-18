@@ -1,7 +1,0 @@
-streamlit
-tensorflow==2.15.0
-numpy
-pandas
-scikit-learn
-pillow
-keras
