@@ -24,9 +24,6 @@ if "history" not in st.session_state:
 # ===========================
 st.markdown("""
 <style>
-section[data-testid="stSidebar"] {
-    background: linear-gradient(150deg, #81d4fa, #0284c7) !important;
-}
 .title {
     font-size: 32px;
     font-weight:700;
@@ -45,8 +42,7 @@ section[data-testid="stSidebar"] {
 # ===========================
 # MENU
 # ===========================
-with st.sidebar:
-    menu = st.selectbox("Menu", ["Beranda", "Klasifikasi", "Riwayat"])
+menu = st.sidebar.selectbox("Menu", ["Beranda", "Klasifikasi", "Riwayat"])
 
 # ===========================
 # LOAD MODEL
@@ -93,12 +89,15 @@ def load_model():
 model = load_model()
 
 # ===========================
-# FEATURE EXTRACTOR
+# FEATURE EXTRACTOR (FIX ERROR)
 # ===========================
 @st.cache_resource
 def get_feature_extractor():
+    dummy = np.zeros((1,224,224,3))
+    model.predict(dummy)
+
     return tf.keras.Model(
-        inputs=model.input,
+        inputs=model.inputs,
         outputs=model.layers[-3].output
     )
 
@@ -116,13 +115,11 @@ def load_database():
 
     if not os.path.exists(dataset_path):
 
-        FILE_ID = "MASUKKAN_FILE_ID_DRIVE_KAMU"
-        url = f"https://drive.google.com/uc?id={FILE_ID}"
-
+        FILE_ID = "1JoxAUD7ciykkPTRr3wkIL_aG3mZPI8vq"
         output = "dataset.zip"
 
         st.info("Downloading dataset...")
-        gdown.download(url, output, quiet=False)
+        gdown.download(id=FILE_ID, output=output, quiet=False)
 
         st.info("Extracting dataset...")
         with zipfile.ZipFile(output, 'r') as zip_ref:
@@ -160,7 +157,7 @@ def load_database():
 db_features, db_labels, db_paths = load_database()
 
 # ===========================
-# SIMILARITY FUNCTION
+# SIMILARITY
 # ===========================
 def find_similar(img, top_k=3):
     if len(db_features) == 0:
@@ -178,7 +175,7 @@ def find_similar(img, top_k=3):
     return [(db_labels[i], db_paths[i], sim[i]) for i in idx]
 
 # ===========================
-# CLASS MODEL
+# CLASS
 # ===========================
 class_names = [
     'barong','celup','cendrawasih','ceplok','dayak','insang',
@@ -242,7 +239,6 @@ elif menu == "Klasifikasi":
 
                 label = results[0][0] if results else "Tidak dikenali"
 
-            # riwayat
             st.session_state.history.append({
                 "Waktu": datetime.now().strftime("%H:%M:%S"),
                 "File": file.name,
@@ -255,8 +251,6 @@ elif menu == "Klasifikasi":
 # RIWAYAT
 # ===========================
 elif menu == "Riwayat":
-
-    st.markdown("<div class='title'>Riwayat</div>", unsafe_allow_html=True)
 
     for item in st.session_state.history[::-1]:
         col1, col2 = st.columns([1,3])
