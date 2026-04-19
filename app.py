@@ -42,7 +42,7 @@ st.markdown("""
 # ===========================
 # MENU
 # ===========================
-menu = st.sidebar.selectbox("Menu", ["Beranda", "Klasifikasi", "Riwayat"])
+menu = st.sidebar.selectbox("Menu", ["Beranda", "Motif", "Klasifikasi", "Riwayat"])
 
 # ===========================
 # LOAD MODEL
@@ -118,10 +118,10 @@ def load_database():
         FILE_ID = "1JoxAUD7ciykkPTRr3wkIL_aG3mZPI8vq"
         output = "dataset.zip"
 
-        st.info("Downloading dataset...")
+        
         gdown.download(id=FILE_ID, output=output, quiet=False)
 
-        st.info("Extracting dataset...")
+        
         with zipfile.ZipFile(output, 'r') as zip_ref:
             zip_ref.extractall()
 
@@ -197,6 +197,30 @@ def predict(img):
 # ===========================
 if menu == "Beranda":
     st.markdown("<div class='title'>Sistem Klasifikasi Motif Batik</div>", unsafe_allow_html=True)
+    st.markdown("<div class='subtitle'>Aplikasi AI untuk klasifikasi motif batik</div>", unsafe_allow_html=True)
+
+    if os.path.exists("assets/batik.jpg"):
+        st.image("assets/batik.jpg", use_column_width=True)
+
+# ===========================
+# MOTIF
+# ===========================
+elif menu == "Motif":
+    st.markdown("<div class='title'>Galeri Motif Batik</div>", unsafe_allow_html=True)
+
+    cols = st.columns(4)
+    for i, name in enumerate(class_names):
+        with cols[i % 4]:
+            st.markdown("<div class='card'>", unsafe_allow_html=True)
+
+            img_path = category_images.get(name)
+            if img_path and os.path.exists(img_path):
+                st.image(Image.open(img_path), use_column_width=True)
+            else:
+                st.warning("Gambar tidak tersedia")
+
+            st.markdown(f"<b>{name.title()}</b>", unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
 
 # ===========================
 # KLASIFIKASI
