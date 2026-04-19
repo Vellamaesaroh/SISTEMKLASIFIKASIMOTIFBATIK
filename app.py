@@ -24,11 +24,65 @@ if "history" not in st.session_state:
 # ===========================
 st.markdown("""
 <style>
+
+/* SIDEBAR BACKGROUND */
+section[data-testid="stSidebar"] {
+    background: linear-gradient(150deg, #81d4fa, #0284c7) !important;
+}
+
+/* JUDUL MENU */
+section[data-testid="stSidebar"] h4 {
+    color: white;
+    font-weight: 700;
+    margin-bottom: 15px;
+}
+
+/* SELECTBOX */
+section[data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] {
+    background: white;
+    border-radius: 10px;
+    padding: 5px;
+}
+
+/* TEXT DALAM DROPDOWN */
+section[data-testid="stSidebar"] .stSelectbox div {
+    color: #0f172a;
+    font-weight: 500;
+}
+
+/* HOVER DROPDOWN */
+section[data-testid="stSidebar"] .stSelectbox div:hover {
+    background: #e0f2fe;
+}
+
+/* TITLE */
 .title {
-    font-size: 32px;
+    font-size: clamp(10px, 4vw, 32px);
     font-weight:700;
     text-align:center;
+    margin-bottom:10px;
+    word-wrap: break-word;
+    line-height:1.3;
 }
+
+/* SUBTITLE */
+.subtitle {
+    text-align:center;
+    opacity:0.7;
+    margin-bottom:20px;
+    padding: 0 10px;
+}
+
+/* CARD */
+.card {
+    background: rgba(255,255,255,0.85);
+    border-radius:16px;
+    padding:15px;
+    text-align:center;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+/* BADGE */
 .badge {
     background: #16a34a;
     padding:6px 16px;
@@ -36,13 +90,21 @@ st.markdown("""
     color:white;
     font-weight:600;
 }
+
 </style>
 """, unsafe_allow_html=True)
 
 # ===========================
-# MENU
+# MENU (DROPDOWN LIKE GAMBAR)
 # ===========================
-menu = st.sidebar.selectbox("Menu", ["Beranda", "Motif", "Klasifikasi", "Riwayat"])
+with st.sidebar:
+    st.markdown("<h4>MENU</h4>", unsafe_allow_html=True)
+
+    menu = st.selectbox(
+        "",
+        ["Beranda", "Motif", "Klasifikasi", "Riwayat"]
+    )
+
 
 # ===========================
 # LOAD MODEL
