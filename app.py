@@ -6,6 +6,7 @@ from datetime import datetime
 from PIL import Image
 from tensorflow.keras.applications.efficientnet import preprocess_input
 import os
+from sklearn.metrics.pairwise import cosine_similarity
 
 # ===========================
 # CONFIG
@@ -59,7 +60,7 @@ with st.sidebar:
     menu = st.selectbox("", ["Beranda", "Motif", "Klasifikasi", "Riwayat"])
 
 # ===========================
-# LOAD MODEL
+# LOAD MODEL (AMAN)
 # ===========================
 import keras
 
@@ -103,28 +104,92 @@ def load_model():
 model = load_model()
 
 # ===========================
-# CLASS
+# FEATURE EXTRACTOR
+# ===========================
+@st.cache_resource
+def get_feature_extractor():
+    return tf.keras.Model(
+        inputs=model.input,
+        outputs=model.layers[-3].output
+    )
+
+feature_extractor = get_feature_extractor()
+
+# ===========================
+# LOAD DATASET SIMILARITY
+# ===========================
+@st.cache_resource
+def load_database():
+    features = []
+    labels = []
+    paths = []
+
+    dataset_path = "dataset_similarity"
+
+    if not os.path.exists(dataset_path):
+        return np.array([]), [], []
+
+    for label in os.listdir(dataset_path):
+        folder = os.path.join(dataset_path, label)
+
+        if not os.path.isdir(folder):
+            continue
+
+        for file in os.listdir(folder):
+            img_path = os.path.join(folder, file)
+
+            try:
+                img = Image.open(img_path).convert("RGB")
+                img = img.resize((224,224))
+
+                arr = np.array(img)
+                arr = preprocess_input(arr)
+                arr = np.expand_dims(arr, axis=0)
+
+                feat = feature_extractor.predict(arr)[0]
+
+                features.append(feat)
+                labels.append(label.lower())
+                paths.append(img_path)
+
+            except:
+                pass
+
+    return np.array(features), labels, paths
+
+db_features, db_labels, db_paths = load_database()
+
+# ===========================
+# FUNCTION SIMILARITY
+# ===========================
+def find_similar(img, top_k=3):
+    if len(db_features) == 0:
+        return []
+
+    img = img.resize((224,224))
+    arr = np.array(img)
+    arr = preprocess_input(arr)
+    arr = np.expand_dims(arr, axis=0)
+
+    query_feat = feature_extractor.predict(arr)
+
+    sim = cosine_similarity(query_feat, db_features)[0]
+    idxs = np.argsort(sim)[-top_k:][::-1]
+
+    results = []
+    for i in idxs:
+        results.append((db_labels[i], db_paths[i], sim[i]))
+
+    return results
+
+# ===========================
+# CLASS (MODEL UTAMA)
 # ===========================
 class_names = [
     'barong','celup','cendrawasih','ceplok','dayak','insang',
     'kawung','lontara','mataketeran','megamendung','ondel-ondel',
     'parang','pring','rumah-minang'
 ]
-
-# ===========================
-# LOAD GAMBAR
-# ===========================
-image_folder = os.path.abspath("assets")
-
-category_images = {}
-for name in class_names:
-    found = None
-    for ext in [".jpg", ".png", ".jpeg"]:
-        path = os.path.join(image_folder, name + ext)
-        if os.path.isfile(path):
-            found = path
-            break
-    category_images[name] = found
 
 # ===========================
 # PREDICT
@@ -144,29 +209,6 @@ def predict(img):
 if menu == "Beranda":
     st.markdown("<div class='title'>Sistem Klasifikasi Motif Batik</div>", unsafe_allow_html=True)
     st.markdown("<div class='subtitle'>Aplikasi AI untuk klasifikasi motif batik</div>", unsafe_allow_html=True)
-
-    if os.path.exists("assets/batik.jpg"):
-        st.image("assets/batik.jpg", use_column_width=True)
-
-# ===========================
-# MOTIF
-# ===========================
-elif menu == "Motif":
-    st.markdown("<div class='title'>Galeri Motif Batik</div>", unsafe_allow_html=True)
-
-    cols = st.columns(4)
-    for i, name in enumerate(class_names):
-        with cols[i % 4]:
-            st.markdown("<div class='card'>", unsafe_allow_html=True)
-
-            img_path = category_images.get(name)
-            if img_path and os.path.exists(img_path):
-                st.image(Image.open(img_path), use_column_width=True)
-            else:
-                st.warning("Gambar tidak tersedia")
-
-            st.markdown(f"<b>{name.title()}</b>", unsafe_allow_html=True)
-            st.markdown("</div>", unsafe_allow_html=True)
 
 # ===========================
 # KLASIFIKASI
@@ -194,26 +236,37 @@ elif menu == "Klasifikasi":
 
                 idx = np.argmax(pred)
                 conf = float(pred[idx])
-
-                # ======================
-                # THRESHOLD
-                # ======================
                 threshold = 0.6
 
-                if conf < threshold:
-                    label = "Tidak Dikenali"
-                    st.error("Motif tidak dikenali")
-                else:
+                # ======================
+                # JIKA YAKIN
+                # ======================
+                if conf >= threshold:
                     label = class_names[idx]
                     st.markdown(f"<div class='badge'>{label.upper()}</div>", unsafe_allow_html=True)
 
-                st.write(f"Confidence: {conf*100:.2f}%")
-                st.progress(conf)
+                    st.write(f"Confidence: {conf*100:.2f}%")
+                    st.progress(conf)
 
                 # ======================
-                # TOP 3
+                # JIKA RAGU → SIMILARITY
                 # ======================
-                st.subheader("Top 3 Prediksi")
+                else:
+                    results = find_similar(img)
+
+                    st.warning("Motif tidak ada di dataset utama")
+                    st.subheader("Motif Paling Mirip")
+
+                    for label_sim, path_sim, score in results:
+                        st.image(path_sim, width=150)
+                        st.write(f"{label_sim.title()} ({score*100:.2f}%)")
+
+                    label = f"Mirip: {results[0][0]}" if results else "Tidak Dikenali"
+
+                # ======================
+                # TOP 3 MODEL
+                # ======================
+                st.subheader("Top 3 Prediksi Model")
                 top3 = pred.argsort()[-3:][::-1]
 
                 for i in top3:
@@ -229,8 +282,6 @@ elif menu == "Klasifikasi":
                     "Confidence": f"{conf*100:.2f}%",
                     "Gambar": img.copy()
                 })
-
-                st.bar_chart(pred)
 
 # ===========================
 # RIWAYAT
