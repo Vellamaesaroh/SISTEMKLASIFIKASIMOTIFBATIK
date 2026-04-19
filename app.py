@@ -124,7 +124,12 @@ def load_database():
     labels = []
     paths = []
 
-    dataset_path = "dataset_similarity"
+    import gdown
+
+url = "https://drive.google.com/drive/folders/1EjZtYjFsClR4NzTYSs1vS-Or-rat9sff?usp=drive_link"
+output = "dataset.zip"
+
+gdown.download(url, output, quiet=False)
 
     if not os.path.exists(dataset_path):
         return np.array([]), [], []
