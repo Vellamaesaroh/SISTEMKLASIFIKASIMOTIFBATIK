@@ -14,7 +14,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 st.set_page_config(layout="wide", page_title="Batik AI")
 
 # ===========================
-# SESSION STATE
+# SESSION
 # ===========================
 if "history" not in st.session_state:
     st.session_state.history = []
@@ -32,16 +32,6 @@ section[data-testid="stSidebar"] {
     font-weight:700;
     text-align:center;
 }
-.subtitle {
-    text-align:center;
-    opacity:0.7;
-}
-.card {
-    background: rgba(255,255,255,0.85);
-    border-radius:16px;
-    padding:15px;
-    text-align:center;
-}
 .badge {
     background: #16a34a;
     padding:6px 16px;
@@ -56,11 +46,10 @@ section[data-testid="stSidebar"] {
 # MENU
 # ===========================
 with st.sidebar:
-    st.markdown("<h4>MENU</h4>", unsafe_allow_html=True)
-    menu = st.selectbox("", ["Beranda", "Motif", "Klasifikasi", "Riwayat"])
+    menu = st.selectbox("Menu", ["Beranda", "Klasifikasi", "Riwayat"])
 
 # ===========================
-# LOAD MODEL (AMAN)
+# LOAD MODEL
 # ===========================
 import keras
 
@@ -116,23 +105,32 @@ def get_feature_extractor():
 feature_extractor = get_feature_extractor()
 
 # ===========================
-# LOAD DATASET SIMILARITY
+# LOAD DATASET (AUTO DOWNLOAD)
 # ===========================
 @st.cache_resource
 def load_database():
+    import gdown
+    import zipfile
+
+    dataset_path = "dataset_similarity"
+
+    if not os.path.exists(dataset_path):
+
+        FILE_ID = "MASUKKAN_FILE_ID_DRIVE_KAMU"
+        url = f"https://drive.google.com/uc?id={FILE_ID}"
+
+        output = "dataset.zip"
+
+        st.info("Downloading dataset...")
+        gdown.download(url, output, quiet=False)
+
+        st.info("Extracting dataset...")
+        with zipfile.ZipFile(output, 'r') as zip_ref:
+            zip_ref.extractall()
+
     features = []
     labels = []
     paths = []
-
-    import gdown
-
-url = "https://drive.google.com/drive/folders/1EjZtYjFsClR4NzTYSs1vS-Or-rat9sff?usp=drive_link"
-output = "dataset.zip"
-
-gdown.download(url, output, quiet=False)
-
-    if not os.path.exists(dataset_path):
-        return np.array([]), [], []
 
     for label in os.listdir(dataset_path):
         folder = os.path.join(dataset_path, label)
@@ -141,21 +139,18 @@ gdown.download(url, output, quiet=False)
             continue
 
         for file in os.listdir(folder):
-            img_path = os.path.join(folder, file)
+            path = os.path.join(folder, file)
 
             try:
-                img = Image.open(img_path).convert("RGB")
-                img = img.resize((224,224))
-
-                arr = np.array(img)
-                arr = preprocess_input(arr)
+                img = Image.open(path).convert("RGB").resize((224,224))
+                arr = preprocess_input(np.array(img))
                 arr = np.expand_dims(arr, axis=0)
 
                 feat = feature_extractor.predict(arr)[0]
 
                 features.append(feat)
-                labels.append(label.lower())
-                paths.append(img_path)
+                labels.append(label)
+                paths.append(path)
 
             except:
                 pass
@@ -165,30 +160,25 @@ gdown.download(url, output, quiet=False)
 db_features, db_labels, db_paths = load_database()
 
 # ===========================
-# FUNCTION SIMILARITY
+# SIMILARITY FUNCTION
 # ===========================
 def find_similar(img, top_k=3):
     if len(db_features) == 0:
         return []
 
     img = img.resize((224,224))
-    arr = np.array(img)
-    arr = preprocess_input(arr)
+    arr = preprocess_input(np.array(img))
     arr = np.expand_dims(arr, axis=0)
 
     query_feat = feature_extractor.predict(arr)
 
     sim = cosine_similarity(query_feat, db_features)[0]
-    idxs = np.argsort(sim)[-top_k:][::-1]
+    idx = np.argsort(sim)[-top_k:][::-1]
 
-    results = []
-    for i in idxs:
-        results.append((db_labels[i], db_paths[i], sim[i]))
-
-    return results
+    return [(db_labels[i], db_paths[i], sim[i]) for i in idx]
 
 # ===========================
-# CLASS (MODEL UTAMA)
+# CLASS MODEL
 # ===========================
 class_names = [
     'barong','celup','cendrawasih','ceplok','dayak','insang',
@@ -201,122 +191,85 @@ class_names = [
 # ===========================
 def predict(img):
     img = img.resize((224,224))
-    img_array = np.array(img, dtype=np.float32)
-    img_array = preprocess_input(img_array)
-    img_array = np.expand_dims(img_array, axis=0)
-
-    pred = model.predict(img_array)[0]
-    return pred
+    arr = preprocess_input(np.array(img))
+    arr = np.expand_dims(arr, axis=0)
+    return model.predict(arr)[0]
 
 # ===========================
 # BERANDA
 # ===========================
 if menu == "Beranda":
     st.markdown("<div class='title'>Sistem Klasifikasi Motif Batik</div>", unsafe_allow_html=True)
-    st.markdown("<div class='subtitle'>Aplikasi AI untuk klasifikasi motif batik</div>", unsafe_allow_html=True)
 
 # ===========================
 # KLASIFIKASI
 # ===========================
 elif menu == "Klasifikasi":
+
     st.markdown("<div class='title'>Klasifikasi Motif Batik</div>", unsafe_allow_html=True)
 
-    if model is None:
-        st.error("Model tidak tersedia")
-    else:
-        st.success("Model siap digunakan")
+    file = st.file_uploader("Upload gambar", type=["jpg","png","jpeg"])
 
-        uploaded_file = st.file_uploader("Upload Gambar", type=["jpg","png","jpeg"])
+    if file:
+        img = Image.open(file).convert("RGB")
 
-        if uploaded_file:
-            col1, col2 = st.columns([1,2])
+        col1, col2 = st.columns([1,2])
 
-            with col1:
-                img = Image.open(uploaded_file).convert("RGB")
-                st.image(img, use_column_width=True)
+        with col1:
+            st.image(img, use_column_width=True)
 
-            with col2:
-                with st.spinner("Memproses..."):
-                    pred = predict(img)
+        with col2:
+            pred = predict(img)
+            idx = np.argmax(pred)
+            conf = float(pred[idx])
 
-                idx = np.argmax(pred)
-                conf = float(pred[idx])
-                threshold = 0.6
+            threshold = 0.6
 
-                # ======================
-                # JIKA YAKIN
-                # ======================
-                if conf >= threshold:
-                    label = class_names[idx]
-                    st.markdown(f"<div class='badge'>{label.upper()}</div>", unsafe_allow_html=True)
+            if conf >= threshold:
+                label = class_names[idx]
+                st.markdown(f"<div class='badge'>{label.upper()}</div>", unsafe_allow_html=True)
+                st.write(f"Confidence: {conf*100:.2f}%")
+                st.progress(conf)
 
-                    st.write(f"Confidence: {conf*100:.2f}%")
-                    st.progress(conf)
+            else:
+                st.warning("Motif tidak dikenali → pakai similarity")
 
-                # ======================
-                # JIKA RAGU → SIMILARITY
-                # ======================
-                else:
-                    results = find_similar(img)
+                results = find_similar(img)
 
-                    st.warning("Motif tidak ada di dataset utama")
-                    st.subheader("Motif Paling Mirip")
+                for l, p, s in results:
+                    st.image(p, width=150)
+                    st.write(f"{l} ({s*100:.2f}%)")
 
-                    for label_sim, path_sim, score in results:
-                        st.image(path_sim, width=150)
-                        st.write(f"{label_sim.title()} ({score*100:.2f}%)")
+                label = results[0][0] if results else "Tidak dikenali"
 
-                    label = f"Mirip: {results[0][0]}" if results else "Tidak Dikenali"
-
-                # ======================
-                # TOP 3 MODEL
-                # ======================
-                st.subheader("Top 3 Prediksi Model")
-                top3 = pred.argsort()[-3:][::-1]
-
-                for i in top3:
-                    st.write(f"{class_names[i]}: {pred[i]*100:.2f}%")
-
-                # ======================
-                # SIMPAN RIWAYAT
-                # ======================
-                st.session_state.history.append({
-                    "Waktu": datetime.now().strftime("%H:%M:%S"),
-                    "File": uploaded_file.name,
-                    "Prediksi": label,
-                    "Confidence": f"{conf*100:.2f}%",
-                    "Gambar": img.copy()
-                })
+            # riwayat
+            st.session_state.history.append({
+                "Waktu": datetime.now().strftime("%H:%M:%S"),
+                "File": file.name,
+                "Prediksi": label,
+                "Confidence": f"{conf*100:.2f}%",
+                "Gambar": img.copy()
+            })
 
 # ===========================
 # RIWAYAT
 # ===========================
 elif menu == "Riwayat":
-    st.markdown("<div class='title'>Riwayat Klasifikasi</div>", unsafe_allow_html=True)
 
-    if st.session_state.history:
-        for item in st.session_state.history[::-1]:
-            col1, col2 = st.columns([1,3])
+    st.markdown("<div class='title'>Riwayat</div>", unsafe_allow_html=True)
 
-            with col1:
-                st.image(item["Gambar"], use_column_width=True)
+    for item in st.session_state.history[::-1]:
+        col1, col2 = st.columns([1,3])
 
-            with col2:
-                st.markdown(f"**Waktu:** {item['Waktu']}")
-                st.markdown(f"**File:** {item['File']}")
-                st.markdown(f"**Prediksi:** {item['Prediksi']}")
-                st.markdown(f"**Confidence:** {item['Confidence']}")
-                st.markdown("---")
+        with col1:
+            st.image(item["Gambar"], use_column_width=True)
 
-        df = pd.DataFrame([
-            {k:v for k,v in item.items() if k != "Gambar"}
-            for item in st.session_state.history
-        ])
+        with col2:
+            st.write(item["Waktu"])
+            st.write(item["File"])
+            st.write(item["Prediksi"])
+            st.write(item["Confidence"])
+            st.markdown("---")
 
-        st.download_button("Download CSV", df.to_csv(index=False), "riwayat.csv")
-
-        if st.button("Hapus Riwayat"):
-            st.session_state.history = []
-            st.success("Riwayat dihapus")
-    else:
-        st.info("Belum ada data")
+    if st.button("Hapus Riwayat"):
+        st.session_state.history = []
