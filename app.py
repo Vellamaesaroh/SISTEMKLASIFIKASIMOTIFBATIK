@@ -274,7 +274,13 @@ def predict(img):
 # ===========================
 if menu == "Beranda":
     st.markdown("<div class='title'>Sistem Klasifikasi Motif Batik</div>", unsafe_allow_html=True)
-    st.markdown("<div class='subtitle'>Aplikasi AI untuk klasifikasi motif batik</div>", unsafe_allow_html=True)
+    st.markdown(
+        "<div class='subtitle'>"
+        "Selamat datang di Sistem Klasifikasi Motif Batik, sebuah aplikasi berbasis kecerdasan buatan <br>"
+        "yang dirancang untuk mengenali dan mengklasifikasikan motif batik secara otomatis."
+        "</div>",
+        unsafe_allow_html=True
+    )
 
     if os.path.exists("assets/batik.jpg"):
         st.image("assets/batik.jpg", use_column_width=True)
