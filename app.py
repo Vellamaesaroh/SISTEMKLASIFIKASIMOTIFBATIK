@@ -184,6 +184,21 @@ class_names = [
 ]
 
 # ===========================
+# LOAD GAMBAR
+# ===========================
+image_folder = os.path.abspath("assets")
+
+category_images = {}
+for name in class_names:
+    found = None
+    for ext in [".jpg", ".png", ".jpeg"]:
+        path = os.path.join(image_folder, name + ext)
+        if os.path.isfile(path):
+            found = path
+            break
+    category_images[name] = found
+
+# ===========================
 # PREDICT
 # ===========================
 def predict(img):
@@ -275,19 +290,31 @@ elif menu == "Klasifikasi":
 # RIWAYAT
 # ===========================
 elif menu == "Riwayat":
+    st.markdown("<div class='title'>Riwayat Klasifikasi</div>", unsafe_allow_html=True)
 
-    for item in st.session_state.history[::-1]:
-        col1, col2 = st.columns([1,3])
+    if st.session_state.history:
+        for item in st.session_state.history[::-1]:
+            col1, col2 = st.columns([1,3])
 
-        with col1:
-            st.image(item["Gambar"], use_column_width=True)
+            with col1:
+                st.image(item["Gambar"], use_column_width=True)
 
-        with col2:
-            st.write(item["Waktu"])
-            st.write(item["File"])
-            st.write(item["Prediksi"])
-            st.write(item["Confidence"])
-            st.markdown("---")
+            with col2:
+                st.markdown(f"**Waktu:** {item['Waktu']}")
+                st.markdown(f"**File:** {item['File']}")
+                st.markdown(f"**Prediksi:** {item['Prediksi']}")
+                st.markdown(f"**Confidence:** {item['Confidence']}")
+                st.markdown("---")
 
-    if st.button("Hapus Riwayat"):
-        st.session_state.history = []
+        df = pd.DataFrame([
+            {k:v for k,v in item.items() if k != "Gambar"}
+            for item in st.session_state.history
+        ])
+
+        st.download_button("Download CSV", df.to_csv(index=False), "riwayat.csv")
+
+        if st.button("Hapus Riwayat"):
+            st.session_state.history = []
+            st.success("Riwayat dihapus")
+    else:
+        st.info("Belum ada data")
