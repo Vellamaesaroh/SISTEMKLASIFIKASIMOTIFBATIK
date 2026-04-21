@@ -370,7 +370,7 @@ elif menu == "Riwayat":
             with col2:
                 st.markdown(f"**Waktu:** {item['Waktu']}")
                 st.markdown(f"**File:** {item['File']}")
-                st.markdown(f"**Prediksi:** {item['Prediksi']}")
+                st.markdown(f"**Klasifikasi:** {item['Klasifikasi']}")
                 st.markdown(f"**Confidence:** {item['Confidence']}")
                 st.markdown("---")
 
