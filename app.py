@@ -349,7 +349,7 @@ elif menu == "Klasifikasi":
             st.session_state.history.append({
                 "Waktu": datetime.now().strftime("%H:%M:%S"),
                 "File": file.name,
-                "Prediksi": label,
+                "Klasifikasi": label,
                 "Confidence": f"{conf*100:.2f}%",
                 "Gambar": img.copy()
             })
