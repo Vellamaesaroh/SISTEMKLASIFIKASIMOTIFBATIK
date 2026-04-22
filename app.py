@@ -14,7 +14,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 st.set_page_config(layout="wide", page_title="Batik AI")
 
 # ===========================
-# HEADER GLOBAL (TAMBAHAN)
+# HEADER (TAMBAHAN)
 # ===========================
 st.markdown("""
 <div style='text-align:center; margin-bottom:20px;'>
@@ -37,45 +37,22 @@ st.markdown("""
 section[data-testid="stSidebar"] {
     background: linear-gradient(150deg, #81d4fa, #0284c7) !important;
 }
-section[data-testid="stSidebar"] h4 {
-    color: white;
-    font-weight: 700;
-    margin-bottom: 15px;
-}
-section[data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] {
-    background: white;
-    border-radius: 10px;
-    padding: 5px;
-}
-section[data-testid="stSidebar"] .stSelectbox div {
-    color: #0f172a;
-    font-weight: 500;
-}
-section[data-testid="stSidebar"] .stSelectbox div:hover {
-    background: #e0f2fe;
-}
 .title {
-    font-size: clamp(10px, 4vw, 32px);
+    font-size: 30px;
     font-weight:700;
     text-align:center;
 }
-.subtitle {
-    text-align:center;
-    opacity:0.7;
-}
 .card {
-    background: rgba(255,255,255,0.85);
-    border-radius:16px;
-    padding:15px;
+    background: rgba(255,255,255,0.9);
+    border-radius:15px;
+    padding:10px;
     text-align:center;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
 }
 .badge {
     background: #16a34a;
     padding:6px 16px;
     border-radius:999px;
     color:white;
-    font-weight:600;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -84,11 +61,10 @@ section[data-testid="stSidebar"] .stSelectbox div:hover {
 # MENU
 # ===========================
 with st.sidebar:
-    st.markdown("<h4>MENU</h4>", unsafe_allow_html=True)
     menu = st.selectbox("", ["Beranda", "Motif", "Klasifikasi", "Riwayat"])
 
 # ===========================
-# LOAD MODEL
+# MODEL
 # ===========================
 from tensorflow.keras.applications import EfficientNetB0
 from tensorflow.keras.models import Sequential
@@ -176,9 +152,11 @@ def find_similar(img):
 # ===========================
 # CLASS
 # ===========================
-class_names = ['barong','celup','cendrawasih','ceplok','dayak','insang',
-               'kawung','lontara','mataketeran','megamendung','ondel-ondel',
-               'parang','pring','rumah-minang']
+class_names = [
+    'barong','celup','cendrawasih','ceplok','dayak','insang',
+    'kawung','lontara','mataketeran','megamendung','ondel-ondel',
+    'parang','pring','rumah-minang'
+]
 
 # ===========================
 # DESKRIPSI (TAMBAHAN)
@@ -186,7 +164,7 @@ class_names = ['barong','celup','cendrawasih','ceplok','dayak','insang',
 deskripsi_motif = {
     "parang": "Melambangkan kekuatan dan kesinambungan.",
     "kawung": "Melambangkan kesucian dan keadilan.",
-    "megamendung": "Melambangkan ketenangan.",
+    "megamendung": "Melambangkan ketenangan dan kesabaran.",
 }
 
 # ===========================
@@ -203,14 +181,32 @@ def predict(img):
 # ===========================
 if menu == "Beranda":
     st.markdown("<div class='title'>Sistem Klasifikasi Motif Batik</div>", unsafe_allow_html=True)
-    st.markdown("<div class='subtitle'>Aplikasi AI untuk mengenali motif batik</div>", unsafe_allow_html=True)
 
-    # TAMBAHAN CARA PAKAI
     st.markdown("### Cara Menggunakan")
     c1,c2,c3 = st.columns(3)
-    c1.info("Upload gambar")
-    c2.info("Sistem analisis")
-    c3.info("Lihat hasil")
+    c1.info("1. Upload gambar")
+    c2.info("2. Sistem analisis")
+    c3.info("3. Lihat hasil")
+
+# ===========================
+# MOTIF
+# ===========================
+elif menu == "Motif":
+    st.markdown("<div class='title'>Galeri Motif</div>", unsafe_allow_html=True)
+
+    cols = st.columns(4)
+    for i, name in enumerate(class_names):
+        with cols[i % 4]:
+            st.markdown("<div class='card'>", unsafe_allow_html=True)
+
+            path = os.path.join("assets", name + ".jpg")
+            if os.path.exists(path):
+                st.image(path, use_column_width=True)
+            else:
+                st.warning("Tidak ada gambar")
+
+            st.markdown(name.title(), unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
 
 # ===========================
 # KLASIFIKASI
@@ -237,22 +233,57 @@ elif menu == "Klasifikasi":
 
             if conf >= 0.6:
                 label = class_names[idx]
+
                 st.markdown(f"<div class='badge'>{label.upper()}</div>", unsafe_allow_html=True)
                 st.write(f"{conf*100:.2f}%")
                 st.progress(conf)
 
-                # TAMBAHAN DESKRIPSI
                 if label in deskripsi_motif:
                     st.success(deskripsi_motif[label])
 
             else:
-                st.warning("Pakai similarity")
-                for l,p,s in find_similar(img):
-                    st.image(p, width=100)
-                    st.write(l, s)
+                st.warning("Menggunakan similarity")
+                results = find_similar(img)
+
+                for l,p,s in results:
+                    st.image(p, width=120)
+                    st.write(f"{l} ({s*100:.2f}%)")
+
+                label = results[0][0] if results else "Tidak dikenali"
+
+            st.session_state.history.append({
+                "Waktu": datetime.now().strftime("%H:%M:%S"),
+                "File": file.name,
+                "Klasifikasi": label,
+                "Confidence": f"{conf*100:.2f}%",
+                "Gambar": img.copy()
+            })
 
 # ===========================
-# FOOTER (TAMBAHAN)
+# RIWAYAT
+# ===========================
+elif menu == "Riwayat":
+    st.markdown("<div class='title'>Riwayat</div>", unsafe_allow_html=True)
+
+    if st.session_state.history:
+        for item in st.session_state.history[::-1]:
+            col1, col2 = st.columns([1,3])
+
+            with col1:
+                st.image(item["Gambar"])
+
+            with col2:
+                st.write(item["Waktu"], item["Klasifikasi"], item["Confidence"])
+
+        df = pd.DataFrame([
+            {k:v for k,v in item.items() if k != "Gambar"}
+            for item in st.session_state.history
+        ])
+
+        st.download_button("Download CSV", df.to_csv(index=False), "riwayat.csv")
+
+# ===========================
+# FOOTER
 # ===========================
 st.markdown("""
 <hr>
