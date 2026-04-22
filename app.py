@@ -14,7 +14,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 st.set_page_config(layout="wide", page_title="Batik AI")
 
 # ===========================
-# HEADER (TAMBAHAN)
+# HEADER
 # ===========================
 st.markdown("""
 <div style='text-align:center; margin-bottom:20px;'>
@@ -53,6 +53,34 @@ section[data-testid="stSidebar"] {
     padding:6px 16px;
     border-radius:999px;
     color:white;
+}
+
+/* ===========================
+   TAMBAHAN CARD RIWAYAT MODERN
+   =========================== */
+.history-card {
+    background: white;
+    border-radius: 16px;
+    padding: 12px;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.history-label {
+    font-weight: 700;
+    font-size: 16px;
+}
+.history-meta {
+    font-size: 13px;
+    opacity: 0.7;
+}
+.history-badge {
+    background: #16a34a;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    display: inline-block;
+    margin-top: 5px;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -159,7 +187,7 @@ class_names = [
 ]
 
 # ===========================
-# DESKRIPSI (TAMBAHAN)
+# DESKRIPSI
 # ===========================
 deskripsi_motif = {
     "parang": "Melambangkan kekuatan dan kesinambungan.",
@@ -260,27 +288,42 @@ elif menu == "Klasifikasi":
             })
 
 # ===========================
-# RIWAYAT
+# RIWAYAT (MODERN)
 # ===========================
 elif menu == "Riwayat":
     st.markdown("<div class='title'>Riwayat</div>", unsafe_allow_html=True)
 
     if st.session_state.history:
         for item in st.session_state.history[::-1]:
-            col1, col2 = st.columns([1,3])
+
+            col1, col2 = st.columns([1,4])
 
             with col1:
-                st.image(item["Gambar"])
+                st.image(item["Gambar"], use_column_width=True)
 
             with col2:
-                st.write(item["Waktu"], item["Klasifikasi"], item["Confidence"])
+                st.markdown(f"""
+                <div class="history-card">
+                    <div class="history-label">{item['Klasifikasi'].upper()}</div>
+                    <div class="history-meta">File: {item['File']}</div>
+                    <div class="history-meta">Waktu: {item['Waktu']}</div>
+                    <div class="history-badge">Confidence: {item['Confidence']}</div>
+                </div>
+                """, unsafe_allow_html=True)
 
         df = pd.DataFrame([
             {k:v for k,v in item.items() if k != "Gambar"}
             for item in st.session_state.history
         ])
 
-        st.download_button("Download CSV", df.to_csv(index=False), "riwayat.csv")
+        st.download_button("⬇ Download CSV", df.to_csv(index=False), "riwayat.csv")
+
+        if st.button("🗑 Hapus Riwayat"):
+            st.session_state.history = []
+            st.success("Riwayat dihapus")
+
+    else:
+        st.info("Belum ada data")
 
 # ===========================
 # FOOTER
