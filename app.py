@@ -213,8 +213,12 @@ def predict(img):
 if menu == "Beranda":
     st.markdown("<div class='title'>Sistem Klasifikasi Motif Batik</div>", unsafe_allow_html=True)
 
-    # ✅ BANNER
-    st.image("https://i.imgur.com/8Km9tLL.png", use_column_width=True)
+    batik_image_path = os.path.join("assets", "batik.jpg")
+
+    if os.path.exists(batik_image_path):
+        st.image(batik_image_path, use_column_width=True)
+    else:
+        st.warning("Gambar batik tidak ditemukan")
 
     st.markdown("### Deskripsi Sistem")
     st.info("""
