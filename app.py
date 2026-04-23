@@ -223,7 +223,8 @@ if menu == "Beranda":
     st.markdown("### Deskripsi Sistem")
     st.info("""
 Aplikasi ini dibuat khusus untuk mengklasifikasikan motif batik berdasarkan gambar yang diunggah oleh pengguna. 
-Adapun model yang digunakan adalah CNN EfficientNetB0.
+Adapun model yang digunakan untuk klasifikasi gambar ini adalah Convolutional Neural Network (CNN) dengan arsitektur EfficientNetB0. 
+Pada dataset motif batik Indonesia, terdapat beberapa objek yang dapat diklasifikasikan yaitu batik barong, batik celup, batik cendrawasih, batik ceplok, batik dayak, batik insang, batik kawung, batik lontara, batik mataketeran, batik megamendung, batik ondel-ondel, batik parang, batik pring, dan batik rumah-minang.
 """)
 
     st.markdown("### Cara Menggunakan")
