@@ -214,7 +214,7 @@ if menu == "Beranda":
     st.markdown("<div class='title'>Sistem Klasifikasi Motif Batik</div>", unsafe_allow_html=True)
 
     # ✅ BANNER
-    st.image("https://www.pinterest.com/pin/36-gambar-mentahan-transparan-bunga-batik-png--961659326658235243/", use_column_width=True)
+    st.image("https://www.pinterest.com/pin/36-gambar-mentahan-transparan-bunga-batik-png", use_column_width=True)
 
     st.markdown("### Deskripsi Sistem")
     st.info("""
