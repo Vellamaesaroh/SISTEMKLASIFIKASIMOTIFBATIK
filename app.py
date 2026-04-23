@@ -211,7 +211,7 @@ def predict(img):
 # BERANDA
 # ===========================
 if menu == "Beranda":
-    st.markdown("<div class='title'>Sistem Klasifikasi Motif Batik br</div>", unsafe_allow_html=True)
+    st.markdown("<div class='title'>Sistem Klasifikasi Motif Batik</div>", unsafe_allow_html=True)
 
     batik_image_path = os.path.join("assets", "batik.jpg")
 
