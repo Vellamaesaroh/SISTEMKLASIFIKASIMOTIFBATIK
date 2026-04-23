@@ -238,7 +238,7 @@ Upload gambar batik → sistem klasifikasi → hasil muncul → otomatis tersimp
 # MOTIF
 # ===========================
 elif menu == "Motif":
-    st.markdown("<div class='title'>Galeri Motif</div>", unsafe_allow_html=True)
+    st.markdown("<div class='title'>Galeri Motif Batik</div>", unsafe_allow_html=True)
 
     cols = st.columns(4)
     for i, name in enumerate(class_names):
