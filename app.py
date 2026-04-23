@@ -213,6 +213,8 @@ def predict(img):
 if menu == "Beranda":
     st.markdown("<div class='title'>Sistem Klasifikasi Motif Batik</div>", unsafe_allow_html=True)
 
+
+    
     batik_image_path = os.path.join("assets", "batik.jpg")
 
     if os.path.exists(batik_image_path):
@@ -224,7 +226,7 @@ if menu == "Beranda":
     st.info("""
 Aplikasi ini dibuat khusus untuk mengklasifikasikan motif batik berdasarkan gambar yang diunggah oleh pengguna. 
 Adapun model yang digunakan untuk klasifikasi gambar ini adalah Convolutional Neural Network (CNN) dengan arsitektur EfficientNetB0. 
-Pada dataset motif batik Indonesia, terdapat beberapa objek yang dapat diklasifikasikan yaitu batik barong, batik celup, batik cendrawasih, batik ceplok, batik dayak, batik insang, batik kawung, batik lontara, batik mataketeran, batik megamendung, batik ondel-ondel, batik parang, batik pring, dan batik rumah-minang.
+Pada dataset motif batik Indonesia, terdapat 15 motif batik yang dapat diklasifikasikan yaitu batik barong, batik celup, batik cendrawasih, batik ceplok, batik dayak, batik insang, batik kawung, batik lontara, batik mataketeran, batik megamendung, batik ondel-ondel, batik parang, batik pring, dan batik rumah-minang.
 """)
 
     st.markdown("### Cara Menggunakan")
