@@ -255,8 +255,86 @@ elif menu == "Motif":
             st.markdown("</div>", unsafe_allow_html=True)
 
 # ===========================
-# KLASIFIKASI & RIWAYAT (TIDAK DIUBAH)
+# KLASIFIKASI
 # ===========================
+elif menu == "Klasifikasi":
+
+    st.markdown("<div class='title'>Klasifikasi Motif Batik</div>", unsafe_allow_html=True)
+
+    file = st.file_uploader("Upload gambar", type=["jpg","png","jpeg"])
+
+    if file:
+        img = Image.open(file).convert("RGB")
+
+        col1, col2 = st.columns([1,2])
+
+        with col1:
+            st.image(img, use_column_width=True)
+
+        with col2:
+            pred = predict(img)
+            idx = np.argmax(pred)
+            conf = float(pred[idx])
+
+            threshold = 0.6
+
+            if conf >= threshold:
+                label = class_names[idx]
+                st.markdown(f"<div class='badge'>{label.upper()}</div>", unsafe_allow_html=True)
+                st.write(f"Confidence: {conf*100:.2f}%")
+                st.progress(conf)
+
+            else:
+                st.warning("Motif tidak dikenali → pakai similarity")
+
+                results = find_similar(img)
+
+                for l, p, s in results:
+                    st.image(p, width=150)
+                    st.write(f"{l} ({s*100:.2f}%)")
+
+                label = results[0][0] if results else "Tidak dikenali"
+
+            st.session_state.history.append({
+                "Waktu": datetime.now().strftime("%H:%M:%S"),
+                "File": file.name,
+                "Klasifikasi": label,
+                "Confidence": f"{conf*100:.2f}%",
+                "Gambar": img.copy()
+            })
+
+# ===========================
+# RIWAYAT
+# ===========================
+elif menu == "Riwayat":
+    st.markdown("<div class='title'>Riwayat Klasifikasi</div>", unsafe_allow_html=True)
+
+    if st.session_state.history:
+        for item in st.session_state.history[::-1]:
+            col1, col2 = st.columns([1,3])
+
+            with col1:
+                st.image(item["Gambar"], use_column_width=True)
+
+            with col2:
+                st.markdown(f"**Waktu:** {item['Waktu']}")
+                st.markdown(f"**File:** {item['File']}")
+                st.markdown(f"**Klasifikasi:** {item['Klasifikasi']}")
+                st.markdown(f"**Confidence:** {item['Confidence']}")
+                st.markdown("---")
+
+        df = pd.DataFrame([
+            {k:v for k,v in item.items() if k != "Gambar"}
+            for item in st.session_state.history
+        ])
+
+        st.download_button("Download CSV", df.to_csv(index=False), "riwayat.csv")
+
+        if st.button("Hapus Riwayat"):
+            st.session_state.history = []
+            st.success("Riwayat dihapus")
+    else:
+        st.info("Belum ada data")
 
 # ===========================
 # FOOTER (UPGRADE)
