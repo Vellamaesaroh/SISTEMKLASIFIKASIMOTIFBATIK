@@ -213,12 +213,8 @@ def predict(img):
 if menu == "Beranda":
     st.markdown("<div class='title'>Sistem Klasifikasi Motif Batik</div>", unsafe_allow_html=True)
 
-    batik_image_path = os.path.join("assets", "batik.jpg")
-
-    if os.path.exists(batik_image_path):
-        st.image(batik_image_path, use_column_width=True)
-    else:
-        st.warning("Gambar batik tidak ditemukan")
+    # ✅ BANNER
+    st.image("https://www.pinterest.com/pin/36-gambar-mentahan-transparan-bunga-batik-png--961659326658235243/", use_column_width=True)
 
     st.markdown("### Deskripsi Sistem")
     st.info("""
