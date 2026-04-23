@@ -303,38 +303,7 @@ elif menu == "Klasifikasi":
                 "Gambar": img.copy()
             })
 
-# ===========================
-# RIWAYAT
-# ===========================
-elif menu == "Riwayat":
-    st.markdown("<div class='title'>Riwayat Klasifikasi</div>", unsafe_allow_html=True)
-
-    if st.session_state.history:
-        for item in st.session_state.history[::-1]:
-            col1, col2 = st.columns([1,3])
-
-            with col1:
-                st.image(item["Gambar"], use_column_width=True)
-
-            with col2:
-                st.markdown(f"**Waktu:** {item['Waktu']}")
-                st.markdown(f"**File:** {item['File']}")
-                st.markdown(f"**Klasifikasi:** {item['Klasifikasi']}")
-                st.markdown(f"**Confidence:** {item['Confidence']}")
-                st.markdown("---")
-
-        df = pd.DataFrame([
-            {k:v for k,v in item.items() if k != "Gambar"}
-            for item in st.session_state.history
-        ])
-
-        st.download_button("Download CSV", df.to_csv(index=False), "riwayat.csv")
-
-        if st.button("Hapus Riwayat"):
-            st.session_state.history = []
-            st.success("Riwayat dihapus")
-    else:
-        st.info("Belum ada data")
+# =========================== # RIWAYAT (MODERN) # =========================== elif menu == "Riwayat": st.markdown("<div class='title'>Riwayat</div>", unsafe_allow_html=True) if st.session_state.history: for item in st.session_state.history[::-1]: col1, col2 = st.columns([1,4]) with col1: st.image(item["Gambar"], use_column_width=True) with col2: st.markdown(f""" <div class="history-card"> <div class="history-label">{item['Klasifikasi'].upper()}</div> <div class="history-meta">File: {item['File']}</div> <div class="history-meta">Waktu: {item['Waktu']}</div> <div class="history-badge">Confidence: {item['Confidence']}</div> </div> """, unsafe_allow_html=True) df = pd.DataFrame([ {k:v for k,v in item.items() if k != "Gambar"} for item in st.session_state.history ]) st.download_button("⬇ Download CSV", df.to_csv(index=False), "riwayat.csv") if st.button("🗑 Hapus Riwayat"): st.session_state.history = [] st.success("Riwayat dihapus") else: st.info("Belum ada data")
 
 # ===========================
 # FOOTER (UPGRADE)
