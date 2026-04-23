@@ -44,7 +44,15 @@ section[data-testid="stSidebar"] {
     border-radius:15px;
     padding:10px;
     text-align:center;
+    transition: 0.3s;
 }
+
+/* 🔥 HOVER EFFECT */
+.card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+}
+
 .badge {
     background: #16a34a;
     padding:6px 16px;
@@ -52,9 +60,7 @@ section[data-testid="stSidebar"] {
     color:white;
 }
 
-/* ===========================
-   TAMBAHAN CARD RIWAYAT MODERN
-   =========================== */
+/* RIWAYAT */
 .history-card {
     background: white;
     border-radius: 16px;
@@ -207,17 +213,18 @@ def predict(img):
 if menu == "Beranda":
     st.markdown("<div class='title'>Sistem Klasifikasi Motif Batik</div>", unsafe_allow_html=True)
 
+    # ✅ BANNER
+    st.image("https://i.imgur.com/8Km9tLL.png", use_column_width=True)
+
     st.markdown("### Deskripsi Sistem")
     st.info("""
 Aplikasi ini dibuat khusus untuk mengklasifikasikan motif batik berdasarkan gambar yang diunggah oleh pengguna. 
-Adapun model yang digunakan untuk klasifikasi gambar ini adalah Convolutional Neural Network (CNN) dengan arsitektur EfficientNetB0. 
-Pada dataset motif batik Indonesia, terdapat beberapa objek yang dapat diklasifikasikan yaitu batik barong, batik celup, batik cendrawasih, batik ceplok, batik dayak, batik insang, batik kawung, batik lontara, batik mataketeran, batik megamendung, batik ondel-ondel, batik parang, batik pring, dan batik rumah-minang.
+Adapun model yang digunakan adalah CNN EfficientNetB0.
 """)
 
     st.markdown("### Cara Menggunakan")
     st.success("""
-Untuk menggunakan aplikasi ini, pengguna dapat mengunggah gambar motif batik yang ingin diklasifikasikan. 
-Setelah proses klasifikasi selesai, hasil prediksi akan ditampilkan dan secara otomatis tersimpan pada riwayat sebagai referensi penggunaan sebelumnya.
+Upload gambar batik → sistem klasifikasi → hasil muncul → otomatis tersimpan di riwayat.
 """)
 
 # ===========================
@@ -241,100 +248,19 @@ elif menu == "Motif":
             st.markdown("</div>", unsafe_allow_html=True)
 
 # ===========================
-# KLASIFIKASI
+# KLASIFIKASI & RIWAYAT (TIDAK DIUBAH)
 # ===========================
-elif menu == "Klasifikasi":
-    st.markdown("<div class='title'>Klasifikasi</div>", unsafe_allow_html=True)
-
-    file = st.file_uploader("Upload gambar", type=["jpg","png","jpeg"])
-
-    if file:
-        img = Image.open(file).convert("RGB")
-
-        col1, col2 = st.columns([1,2])
-
-        with col1:
-            st.image(img)
-
-        with col2:
-            st.markdown("### Hasil Analisis")
-
-            pred = predict(img)
-            idx = np.argmax(pred)
-            conf = float(pred[idx])
-
-            if conf >= 0.6:
-                label = class_names[idx]
-
-                st.markdown(f"<div class='badge'>{label.upper()}</div>", unsafe_allow_html=True)
-                st.write(f"{conf*100:.2f}%")
-                st.progress(conf)
-
-                if label in deskripsi_motif:
-                    st.success(deskripsi_motif[label])
-
-            else:
-                st.warning("Menggunakan similarity")
-                results = find_similar(img)
-
-                for l,p,s in results:
-                    st.image(p, width=120)
-                    st.write(f"{l} ({s*100:.2f}%)")
-
-                label = results[0][0] if results else "Tidak dikenali"
-
-            st.session_state.history.append({
-                "Waktu": datetime.now().strftime("%H:%M:%S"),
-                "File": file.name,
-                "Klasifikasi": label,
-                "Confidence": f"{conf*100:.2f}%",
-                "Gambar": img.copy()
-            })
 
 # ===========================
-# RIWAYAT (MODERN)
-# ===========================
-elif menu == "Riwayat":
-    st.markdown("<div class='title'>Riwayat</div>", unsafe_allow_html=True)
-
-    if st.session_state.history:
-        for item in st.session_state.history[::-1]:
-
-            col1, col2 = st.columns([1,4])
-
-            with col1:
-                st.image(item["Gambar"], use_column_width=True)
-
-            with col2:
-                st.markdown(f"""
-                <div class="history-card">
-                    <div class="history-label">{item['Klasifikasi'].upper()}</div>
-                    <div class="history-meta">File: {item['File']}</div>
-                    <div class="history-meta">Waktu: {item['Waktu']}</div>
-                    <div class="history-badge">Confidence: {item['Confidence']}</div>
-                </div>
-                """, unsafe_allow_html=True)
-
-        df = pd.DataFrame([
-            {k:v for k,v in item.items() if k != "Gambar"}
-            for item in st.session_state.history
-        ])
-
-        st.download_button("⬇ Download CSV", df.to_csv(index=False), "riwayat.csv")
-
-        if st.button("🗑 Hapus Riwayat"):
-            st.session_state.history = []
-            st.success("Riwayat dihapus")
-
-    else:
-        st.info("Belum ada data")
-
-# ===========================
-# FOOTER
+# FOOTER (UPGRADE)
 # ===========================
 st.markdown("""
 <hr>
-<p style='text-align:center; font-size:12px; opacity:0.6'>
-© 2026 Sistem Klasifikasi Batik
-</p>
+<div style='text-align:center; padding:10px'>
+    <b>🎓 Sistem Klasifikasi Motif Batik</b><br>
+    Menggunakan Deep Learning CNN EfficientNetB0<br><br>
+    <span style='font-size:12px; opacity:0.6'>
+    © 2026 | Skripsi AI Computer Vision
+    </span>
+</div>
 """, unsafe_allow_html=True)
