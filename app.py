@@ -17,10 +17,7 @@ st.set_page_config(layout="wide", page_title="Batik AI")
 # HEADER
 # ===========================
 st.markdown("""
-<div style='text-align:center; margin-bottom:20px;'>
-<h2>🧵 Batik AI Recognition System</h2>
-<p style='opacity:0.7'>Klasifikasi motif batik berbasis Deep Learning</p>
-</div>
+
 """, unsafe_allow_html=True)
 
 # ===========================
