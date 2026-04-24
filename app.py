@@ -283,6 +283,15 @@ elif menu == "Klasifikasi":
                 st.markdown(f"<div class='badge'>{label.upper()}</div>", unsafe_allow_html=True)
                 st.write(f"Confidence: {conf*100:.2f}%")
                 st.progress(conf)
+                 # ===========================
+                # ✅ TAMBAHAN DESKRIPSI
+                # ===========================
+                deskripsi = deskripsi_motif.get(label.lower(), "Deskripsi belum tersedia.")
+                st.markdown(f"""
+                <div style='background:#f0fdf4; padding:15px; border-radius:10px; margin-top:10px'>
+                <b>📌 Deskripsi:</b><br>{deskripsi}
+                </div>
+                """, unsafe_allow_html=True)
 
             else:
                 st.warning("Motif tidak dikenali → pakai similarity")
