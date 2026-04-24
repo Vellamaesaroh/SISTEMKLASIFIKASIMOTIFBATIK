@@ -193,9 +193,20 @@ class_names = [
 # DESKRIPSI
 # ===========================
 deskripsi_motif = {
-    "parang": "Melambangkan kekuatan dan kesinambungan.",
-    "kawung": "Melambangkan kesucian dan keadilan.",
-    "megamendung": "Melambangkan ketenangan dan kesabaran.",
+    "barong":"Motif barong melambangkan kekuatan, keberanian, perlindungan dari kejahatan, dan wibawa. Motif ini berakar dari kepercayaan akan keseimbangan antara kebaikan dan keburukan, serta sering dikaitkan dengan pemimpin yang bijaksana dan semangat pantang menyerah",
+    "celup": "Motif celup atau jumputan, yang berkembang dari pengaruh teknik ikat Tiongkok dan India, secara simbolis melambangkan kesatuan, kreativitas, dan keragaman.",
+    "cendrawasih": "Batik Cendrawasih adalah motif khas Papua yang terinspirasi dari burung endemik "Bird of Paradise", melambangkan keanggunan, keindahan alam Papua, spiritualitas, serta kebebasan. Sebagai simbol sakral, motif ini menggambarkan kecantikan bulu burung surga tersebut, sekaligus identitas budaya Papua yang kaya.",
+    "ceplok": "batik ceplok, yang merupakan salah satu motif tertua di Indonesia, melambangkan keteraturan hidup, keseimbangan, dan suratan takdir. Dengan pola geometris simetris seperti lingkaran atau mawar, motif ini mencerminkan harmoni empat arah mata angin dan ketentraman keluarga.",
+    "dayak": "batik dayak melambangkan keharmonisan hubungan manusia dengan alam, Tuhan, dan sesama, serta keberanian. Motifnya terinspirasi kekayaan alam Borneo, seperti burung enggang (perdamaian/kemuliaan) dan sulur tanaman, serta sering menggambarkan aktivitas sungai.",
+    "insang": "Batik atau Tenun Corak Insang adalah warisan budaya khas Pontianak, Kalimantan Barat, yang berasal dari masa Kesultanan Pontianak. Motif ini melambangkan napas kehidupan, kedekatan masyarakat Melayu dengan Sungai Kapuas, serta rasa syukur, keanggunan, dan dinamika kehidupan yang terus berubah.",
+    "kawung": "Batik Kawung adalah salah satu motif tertua asal Yogyakarta (abad ke-13/16) yang terinspirasi dari buah aren atau kolang-kaling, melambangkan pengendalian diri yang sempurna, kesucian hati, keadilan, dan kesederhanaan",
+    "lontara": "Batik Lontara, yang berasal dari Sulawesi Selatan, melambangkan identitas, kebanggaan, dan nilai-nilai luhur budaya Bugis-Makassar. Motifnya menggunakan aksara kuno Lontara, mencerminkan karakter jujur, kebenaran (lebih baik patah daripada bengkok), serta kekayaan alam",
+    "mataketeran": "Batik Mata Keteran adalah salah satu motif batik khas dari Pamekasan, Madura. Motif ini mengambil inspirasi dari mata burung perkutut (Manok Keteran dalam bahasa Madura)",
+    "megamendung": "Sejarah Batik Megamendung berasal dari Cirebon, Jawa Barat, yang lahir dari akulturasi budaya Tionghoa (awan) dan lokal. Motif ini melambangkan kesabaran, keteduhan, kesuburan, dan kehidupan. Warna biru dan gumpalan awan mendung menandakan langit luas yang tenang dan pembawa berkah",
+    "ondel-ondel": "Batik Ondel-ondel merupakan motif khas Betawi yang melambangkan perlindungan, penolak bala (bahaya/wabah), serta harapan akan kehidupan yang lebih makmur dan aman.",
+    "parang": "Batik Parang, salah satu motif tertua dari Kerajaan Mataram, melambangkan kekuatan, kewibawaan, perjuangan tanpa henti, dan kesinambungan. Motif diagonal seperti ombak laut ini menggambarkan perjalanan hidup yang penuh tantangan, mendorong pemakainya untuk terus berusaha memperbaiki diri, berani, dan bijaksana, serta dulunya merupakan simbol sakral kepemimpinan raja.",
+    "pring": "Batik Pring Sedapur, khas Magetan, melambangkan persatuan, kebersamaan, kekuatan, dan kerendahan hati. Motif ini terinspirasi dari rumpun bambu yang tumbuh bersama, mencerminkan kehidupan yang rukun, saling menjaga, serta ketahanan karakter. Pring (bambu) juga bermakna adaptabilitas, sedangkan sedapur (satu dapur) berarti kerukunan keluarga.",
+    "rumah-minang": "Batik Rumah Minang (termasuk batik tanah liek) berakar dari kebudayaan Minangkabau abad ke-19, menggunakan tanah liat dan bahan alami sebagai pewarna. Motifnya terinspirasi dari alam, ukiran Rumah Gadang, dan flora-fauna, yang melambangkan filosofi alam takambang jadi guru (alam bentang ilmu tempat manusia berguru) serta kekayaan budaya.",
 }
 
 # ===========================
@@ -289,7 +300,7 @@ elif menu == "Klasifikasi":
                 deskripsi = deskripsi_motif.get(label.lower(), "Deskripsi belum tersedia.")
                 st.markdown(f"""
                 <div style='background:#f0fdf4; padding:15px; border-radius:10px; margin-top:10px'>
-                <b>📌 Deskripsi:</b><br>{deskripsi}
+                <b>Deskripsi:</b><br>{deskripsi}
                 </div>
                 """, unsafe_allow_html=True)
 
