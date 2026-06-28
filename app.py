@@ -322,13 +322,11 @@ elif menu == "Klasifikasi":
                 "Confidence": f"{conf*100:.2f}%",
                 "Gambar": img.copy()
             })
-            elif menu == "Klasifikasi Banyak Gambar":
-
+elif menu == "Klasifikasi Banyak Gambar":
     st.markdown(
         "<div class='title'>Klasifikasi Banyak Gambar Batik</div>",
         unsafe_allow_html=True
     )
-
     files = st.file_uploader(
         "Upload Banyak Gambar",
         type=["jpg", "jpeg", "png"],
