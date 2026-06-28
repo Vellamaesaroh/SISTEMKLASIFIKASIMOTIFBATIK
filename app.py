@@ -7,6 +7,12 @@ from PIL import Image
 from tensorflow.keras.applications.efficientnet import preprocess_input
 import os
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.metrics import (
+    accuracy_score,
+    confusion_matrix,
+    classification_report
+    )
+import matplotlib.pyplot as plt
 
 # ===========================
 # CONFIG
@@ -229,7 +235,7 @@ if menu == "Beranda":
     batik_image_path = os.path.join("assets", "batik.jpg")
 
     if os.path.exists(batik_image_path):
-        st.image(batik_image_path, use_column_width=True)
+        st.image(batik_image_path, width="stretch")
     else:
         st.warning("Gambar batik tidak ditemukan")
 
@@ -258,7 +264,7 @@ elif menu == "Motif":
 
             path = os.path.join("assets", name + ".jpg")
             if os.path.exists(path):
-                st.image(path, use_column_width=True)
+                st.image(path, width="stretch")
             else:
                 st.warning("Tidak ada gambar")
 
@@ -280,7 +286,7 @@ elif menu == "Klasifikasi":
         col1, col2 = st.columns([1,2])
 
         with col1:
-            st.image(img, use_column_width=True)
+            st.image(img, width="stretch")
 
         with col2:
             pred = predict(img)
@@ -322,71 +328,182 @@ elif menu == "Klasifikasi":
                 "Confidence": f"{conf*100:.2f}%",
                 "Gambar": img.copy()
             })
+# ===========================
+# KLASIFIKASI BANYAK GAMBAR
+# ===========================
 elif menu == "Klasifikasi Banyak Gambar":
+
+    import zipfile
+    import tempfile
+
     st.markdown(
-        "<div class='title'>Klasifikasi Banyak Gambar Batik</div>",
+        "<div class='title'>Klasifikasi Dataset Batik (.zip)</div>",
         unsafe_allow_html=True
     )
-    files = st.file_uploader(
-        "Upload Banyak Gambar",
-        type=["jpg", "jpeg", "png"],
-        accept_multiple_files=True
+
+    uploaded_zip = st.file_uploader(
+        "Upload Dataset ZIP",
+        type=["zip"]
     )
 
-    if files:
+    if uploaded_zip is not None:
 
         hasil = []
 
-        progress = st.progress(0)
+        with tempfile.TemporaryDirectory() as temp_dir:
 
-        for i, file in enumerate(files):
+            # Simpan file zip
+            zip_path = os.path.join(temp_dir, "dataset.zip")
 
-            img = Image.open(file).convert("RGB")
+            with open(zip_path, "wb") as f:
+                f.write(uploaded_zip.getbuffer())
 
-            pred = predict(img)
+            # Ekstrak zip
+            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                zip_ref.extractall(temp_dir)
 
-            idx = np.argmax(pred)
-            conf = float(pred[idx])
+            # Cari semua gambar
+            image_files = []
+            y_true = []
+            y_pred = []
 
-            threshold = 0.6
+            for root, dirs, files in os.walk(temp_dir):
+                for file in files:
+                    if file.lower().endswith((".jpg", ".jpeg", ".png")):
+                        image_files.append(os.path.join(root, file))
 
-            if conf >= threshold:
-                label = class_names[idx]
+            if len(image_files) == 0:
+                st.error("Tidak ada gambar ditemukan dalam file ZIP.")
+
             else:
-                results = find_similar(img)
-                label = results[0][0] if results else "Tidak dikenali"
 
-            hasil.append({
-                "Nama File": file.name,
-                "Motif": label,
-                "Confidence (%)": round(conf*100, 2)
-            })
+                st.success(f"{len(image_files)} gambar ditemukan.")
 
-            progress.progress((i+1)/len(files))
+                progress = st.progress(0)
 
-            st.session_state.history.append({
-                "Waktu": datetime.now().strftime("%H:%M:%S"),
-                "File": file.name,
-                "Klasifikasi": label,
-                "Confidence": f"{conf*100:.2f}%",
-                "Gambar": img.copy()
-            })
+                for i, path in enumerate(image_files):
+                    try:
+                        true_label = os.path.basename(os.path.dirname(path))
+                        img = Image.open(path).convert("RGB")
+                        pred = predict(img)
+                        idx = np.argmax(pred)
+                        conf = float(pred[idx])
+                        threshold = 0.6
+                        if conf >= threshold:
+                            label = class_names[idx]
+                        else:
+                            results = find_similar(img)
+                            label = results[0][0] if results else "Tidak dikenali"
+                            y_true.append(true_label)
+                            y_pred.append(label)
+                            hasil.append({
+                                "Nama File": os.path.basename(path),
+                                "Label Asli": true_label,
+                                "Prediksi": label,
+                                "Confidence (%)": round(conf*100,2)
+                                })
+                            st.session_state.history.append({
+                                "Waktu": datetime.now().strftime("%H:%M:%S"),
+                                "File": os.path.basename(path),
+                                "Klasifikasi": label,
+                                "Confidence": f"{conf*100:.2f}%",
+                                "Gambar": img.copy()
+                                })
 
-        st.success(f"{len(files)} gambar berhasil diklasifikasikan")
+                    except Exception as e:
 
-        df_hasil = pd.DataFrame(hasil)
+                        hasil.append({
+                            "Nama File": os.path.basename(path),
+                            "Motif": "Error",
+                            "Confidence (%)": "-"
+                        })
 
-        st.dataframe(
-            df_hasil,
-            use_container_width=True
-        )
+                    progress.progress((i+1)/len(image_files))
 
-        st.download_button(
-            "⬇ Download Hasil CSV",
-            df_hasil.to_csv(index=False),
-            file_name="hasil_klasifikasi_batch.csv",
-            mime="text/csv"
-        )
+                st.success("Klasifikasi selesai.")
+
+                df_hasil = pd.DataFrame(hasil)
+
+                st.dataframe(
+                    df_hasil,
+                    width="stretch"
+                )
+
+                csv = df_hasil.to_csv(index=False).encode("utf-8")
+
+                st.download_button(
+                    "⬇ Download Hasil CSV",
+                    csv,
+                    file_name="hasil_klasifikasi_dataset.csv",
+                    mime="text/csv"
+                )
+                st.divider()
+                st.subheader("Evaluasi Model")
+                accuracy = accuracy_score(y_true, y_pred)
+                st.metric(
+                    "Accuracy",
+                    f"{accuracy*100:.2f}%"
+                    )
+                report = classification_report(
+                    y_true,
+                    y_pred,
+                    labels=class_names,
+                    output_dict=True,
+                    zero_division=0
+                    )
+                report_df = pd.DataFrame(report).transpose()
+                st.subheader("Classification Report")
+                st.dataframe(
+                    report_df,
+                    width="stretch"
+                    )
+                cm = confusion_matrix(
+                    y_true,
+                    y_pred,
+                    labels=class_names
+                    )
+                cm_df = pd.DataFrame(
+                    cm,
+                    index=class_names,
+                    columns=class_names
+                    )
+                st.subheader("Confusion Matrix")
+                st.dataframe(
+                    cm_df,
+                    width="stretch"
+                    )
+                fig, ax = plt.subplots(figsize=(12,10))
+                im = ax.imshow(cm, cmap="Blues")
+                ax.set_xticks(range(len(class_names)))
+                ax.set_yticks(range(len(class_names)))
+                ax.set_xticklabels(class_names, rotation=90)
+                ax.set_yticklabels(class_names)
+                plt.xlabel("Prediksi")
+                plt.ylabel("Label Asli")
+                plt.title("Confusion Matrix")
+                for i in range(len(class_names)):
+                    for j in range(len(class_names)):
+                        ax.text(
+                            j,
+                            i,
+                            cm[i, j],
+                            ha="center",
+                            va="center",
+                            fontsize=7
+                            )
+                        plt.colorbar(im)
+                        st.pyplot(fig)
+                        st.subheader("Statistik Prediksi")
+                        statistik = (
+                            df_hasil["Prediksi"]
+                            .value_counts()
+                            .reset_index()
+                            )
+                        statistik.columns = ["Motif", "Jumlah"]
+                        st.dataframe(statistik, width="stretch")
+                        st.bar_chart(
+                            statistik.set_index("Motif")
+                            )
 
 # ===========================
 # RIWAYAT (MODERN)
@@ -400,7 +517,7 @@ elif menu == "Riwayat":
             col1, col2 = st.columns([1,4])
 
             with col1:
-                st.image(item["Gambar"], use_column_width=True)
+                st.image(item["Gambar"], width="stretch")
 
             with col2:
                 st.markdown(f"""
