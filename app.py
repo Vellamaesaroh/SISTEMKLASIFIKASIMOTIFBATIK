@@ -92,7 +92,7 @@ section[data-testid="stSidebar"] {
 # MENU
 # ===========================
 with st.sidebar:
-    menu = st.selectbox("", ["Beranda", "Motif", "Klasifikasi", "Riwayat"])
+    menu = st.selectbox("", ["Beranda", "Motif", "Klasifikasi", "Klasifikasi Banyak Gambar", "Riwayat"])
 
 # ===========================
 # MODEL
@@ -322,6 +322,73 @@ elif menu == "Klasifikasi":
                 "Confidence": f"{conf*100:.2f}%",
                 "Gambar": img.copy()
             })
+            elif menu == "Klasifikasi Banyak Gambar":
+
+    st.markdown(
+        "<div class='title'>Klasifikasi Banyak Gambar Batik</div>",
+        unsafe_allow_html=True
+    )
+
+    files = st.file_uploader(
+        "Upload Banyak Gambar",
+        type=["jpg", "jpeg", "png"],
+        accept_multiple_files=True
+    )
+
+    if files:
+
+        hasil = []
+
+        progress = st.progress(0)
+
+        for i, file in enumerate(files):
+
+            img = Image.open(file).convert("RGB")
+
+            pred = predict(img)
+
+            idx = np.argmax(pred)
+            conf = float(pred[idx])
+
+            threshold = 0.6
+
+            if conf >= threshold:
+                label = class_names[idx]
+            else:
+                results = find_similar(img)
+                label = results[0][0] if results else "Tidak dikenali"
+
+            hasil.append({
+                "Nama File": file.name,
+                "Motif": label,
+                "Confidence (%)": round(conf*100, 2)
+            })
+
+            progress.progress((i+1)/len(files))
+
+            st.session_state.history.append({
+                "Waktu": datetime.now().strftime("%H:%M:%S"),
+                "File": file.name,
+                "Klasifikasi": label,
+                "Confidence": f"{conf*100:.2f}%",
+                "Gambar": img.copy()
+            })
+
+        st.success(f"{len(files)} gambar berhasil diklasifikasikan")
+
+        df_hasil = pd.DataFrame(hasil)
+
+        st.dataframe(
+            df_hasil,
+            use_container_width=True
+        )
+
+        st.download_button(
+            "⬇ Download Hasil CSV",
+            df_hasil.to_csv(index=False),
+            file_name="hasil_klasifikasi_batch.csv",
+            mime="text/csv"
+        )
 
 # ===========================
 # RIWAYAT (MODERN)
