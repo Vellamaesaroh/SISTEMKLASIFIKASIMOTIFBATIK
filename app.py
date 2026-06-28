@@ -7,12 +7,6 @@ from PIL import Image
 from tensorflow.keras.applications.efficientnet import preprocess_input
 import os
 from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.metrics import (
-    accuracy_score,
-    confusion_matrix,
-    classification_report
-    )
-import matplotlib.pyplot as plt
 
 # ===========================
 # CONFIG
@@ -98,7 +92,7 @@ section[data-testid="stSidebar"] {
 # MENU
 # ===========================
 with st.sidebar:
-    menu = st.selectbox("", ["Beranda", "Motif", "Klasifikasi", "Klasifikasi Banyak Gambar", "Riwayat"])
+    menu = st.selectbox("", ["Beranda", "Motif", "Klasifikasi", "Riwayat", "Klasifikasi Banyak Gambar"])
 
 # ===========================
 # MODEL
@@ -364,8 +358,6 @@ elif menu == "Klasifikasi Banyak Gambar":
 
             # Cari semua gambar
             image_files = []
-            y_true = []
-            y_pred = []
 
             for root, dirs, files in os.walk(temp_dir):
                 for file in files:
@@ -382,33 +374,37 @@ elif menu == "Klasifikasi Banyak Gambar":
                 progress = st.progress(0)
 
                 for i, path in enumerate(image_files):
+
                     try:
-                        true_label = os.path.basename(os.path.dirname(path))
+
                         img = Image.open(path).convert("RGB")
+
                         pred = predict(img)
+
                         idx = np.argmax(pred)
                         conf = float(pred[idx])
+
                         threshold = 0.6
+
                         if conf >= threshold:
                             label = class_names[idx]
                         else:
                             results = find_similar(img)
                             label = results[0][0] if results else "Tidak dikenali"
-                            y_true.append(true_label)
-                            y_pred.append(label)
-                            hasil.append({
-                                "Nama File": os.path.basename(path),
-                                "Label Asli": true_label,
-                                "Prediksi": label,
-                                "Confidence (%)": round(conf*100,2)
-                                })
-                            st.session_state.history.append({
-                                "Waktu": datetime.now().strftime("%H:%M:%S"),
-                                "File": os.path.basename(path),
-                                "Klasifikasi": label,
-                                "Confidence": f"{conf*100:.2f}%",
-                                "Gambar": img.copy()
-                                })
+
+                        hasil.append({
+                            "Nama File": os.path.basename(path),
+                            "Motif": label,
+                            "Confidence (%)": round(conf*100,2)
+                        })
+
+                        st.session_state.history.append({
+                            "Waktu": datetime.now().strftime("%H:%M:%S"),
+                            "File": os.path.basename(path),
+                            "Klasifikasi": label,
+                            "Confidence": f"{conf*100:.2f}%",
+                            "Gambar": img.copy()
+                        })
 
                     except Exception as e:
 
@@ -437,73 +433,23 @@ elif menu == "Klasifikasi Banyak Gambar":
                     file_name="hasil_klasifikasi_dataset.csv",
                     mime="text/csv"
                 )
-                st.divider()
-                st.subheader("Evaluasi Model")
-                accuracy = accuracy_score(y_true, y_pred)
-                st.metric(
-                    "Accuracy",
-                    f"{accuracy*100:.2f}%"
-                    )
-                report = classification_report(
-                    y_true,
-                    y_pred,
-                    labels=class_names,
-                    output_dict=True,
-                    zero_division=0
-                    )
-                report_df = pd.DataFrame(report).transpose()
-                st.subheader("Classification Report")
-                st.dataframe(
-                    report_df,
-                    width="stretch"
-                    )
-                cm = confusion_matrix(
-                    y_true,
-                    y_pred,
-                    labels=class_names
-                    )
-                cm_df = pd.DataFrame(
-                    cm,
-                    index=class_names,
-                    columns=class_names
-                    )
-                st.subheader("Confusion Matrix")
-                st.dataframe(
-                    cm_df,
-                    width="stretch"
-                    )
-                fig, ax = plt.subplots(figsize=(12,10))
-                im = ax.imshow(cm, cmap="Blues")
-                ax.set_xticks(range(len(class_names)))
-                ax.set_yticks(range(len(class_names)))
-                ax.set_xticklabels(class_names, rotation=90)
-                ax.set_yticklabels(class_names)
-                plt.xlabel("Prediksi")
-                plt.ylabel("Label Asli")
-                plt.title("Confusion Matrix")
-                for i in range(len(class_names)):
-                    for j in range(len(class_names)):
-                        ax.text(
-                            j,
-                            i,
-                            cm[i, j],
-                            ha="center",
-                            va="center",
-                            fontsize=7
-                            )
-                        plt.colorbar(im)
-                        st.pyplot(fig)
-                        st.subheader("Statistik Prediksi")
-                        statistik = (
-                            df_hasil["Prediksi"]
-                            .value_counts()
-                            .reset_index()
-                            )
-                        statistik.columns = ["Motif", "Jumlah"]
-                        st.dataframe(statistik, width="stretch")
-                        st.bar_chart(
-                            statistik.set_index("Motif")
-                            )
+
+                # Statistik
+                st.subheader("Statistik Hasil")
+
+                statistik = (
+                    df_hasil["Motif"]
+                    .value_counts()
+                    .reset_index()
+                )
+
+                statistik.columns = ["Motif","Jumlah"]
+
+                st.dataframe(statistik, width="stretch")
+
+                st.bar_chart(
+                    statistik.set_index("Motif")
+                )
 
 # ===========================
 # RIWAYAT (MODERN)
